@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #4f46e5;
+  --brand-dark: #3730a3;
+  --bg-primary: #060b19;
+  --bg-secondary: #0c1631;
+  --bg-card: #15244b;
+  --bg-hover: #213565;
+  --border: rgba(255, 255, 255, 0.07);
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #213565;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
+}
+
+/* ── Glass cards ── */
+.glass-card {
+  background: linear-gradient(145deg, rgba(21, 36, 75, 0.4) 0%, rgba(21, 36, 75, 0.1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Brand gradient text ── */
+.brand-gradient-text {
+  background: linear-gradient(135deg, #818cf8, #4f46e5, #3730a3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-brand-gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+}
+
+.shadow-brand {
+  box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.5);
+}
+
+.shadow-brand-sm {
+  box-shadow: 0 4px 15px -5px rgba(79, 70, 229, 0.4);
+}
+
+/* ── Shimmer skeleton ── */
+.shimmer {
+  background: linear-gradient(90deg, #15244b 25%, #213565 50%, #15244b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Sidebar active item ── */
+.nav-item-active {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(79, 70, 229, 0.05));
+  border-left: 2px solid #4f46e5;
+  color: #818cf8;
+}
+
+/* ── Stat card glow ── */
+.stat-glow-orange {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.1);
+}
+
+.stat-glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
+.stat-glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+.stat-glow-purple {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
+}
+
+/* ── Gamification badge ── */
+.badge-bronze {
+  background: linear-gradient(135deg, #7c5c2b, #cd7f32);
+}
+
+.badge-prata {
+  background: linear-gradient(135deg, #71717a, #c0c0c0);
+}
+
+.badge-ouro {
+  background: linear-gradient(135deg, #a16207, #ffd700);
+}
+
+.badge-platina {
+  background: linear-gradient(135deg, #52525b, #e5e4e2);
+}
+
+.badge-diamante {
+  background: linear-gradient(135deg, #0369a1, #b9f2ff);
+}
+
+.badge-rubi {
+  background: linear-gradient(135deg, #7f1d1d, #ef4444);
+}
+
+/* ── Calendar grid ── */
+.calendar-slot {
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.calendar-slot:hover {
+  background: rgba(79, 70, 229, 0.08);
+  border-color: rgba(79, 70, 229, 0.3);
+}
+
+.calendar-slot.occupied {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  cursor: not-allowed;
+}
+
+.calendar-slot.available {
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.calendar-slot.selected {
+  background: rgba(79, 70, 229, 0.15);
+  border-color: #4f46e5;
+}

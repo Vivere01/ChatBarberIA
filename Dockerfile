@@ -2,8 +2,10 @@ FROM node:20-alpine
 # VERSION-V5
 WORKDIR /app
 
-# Instalar dependências necessárias para o Prisma rodar no Alpine
+# Instalar dependências necessárias para o Prisma rodar no Alpine e configurar Engine Node-API
 RUN apk add --no-cache openssl libc6-compat
+ENV PRISMA_CLIENT_ENGINE_TYPE=library
+ENV PRISMA_CLI_QUERY_ENGINE_TYPE=library
 
 # 1. Instalar as dependências e ferramentas
 COPY package.json package-lock.json ./

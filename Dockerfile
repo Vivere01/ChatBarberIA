@@ -16,13 +16,10 @@ RUN npm run build
 # --- ESTÁGIO DE EXECUÇÃO ---
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOST=0.0.0.0
 
-# Movemos os arquivos do standalone para a raiz para facilitar caminhos
-RUN cp -r .next/standalone/. .
-RUN cp -r .next/static ./.next/static
-RUN cp -r public ./public
-
+# Em modo padrão (sem standalone), o Next cuida dos arquivos automaticamente
+# Basta termos o ambiente pronto para o start
 EXPOSE 3000
 
-# Agora rodamos o server.js que está na raiz
-CMD ["node", "server.js"]
+CMD ["npm", "run", "start"]

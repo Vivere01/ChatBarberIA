@@ -179,8 +179,8 @@ export default function StaffPage() {
                         {staff.map((member) => (
                             <div key={member.id} className="glass-card rounded-[2.5rem] p-8 relative group overflow-visible transition-all hover:border-white/15 bg-dark-800/20 border border-white/5">
                                 <div className="flex items-start justify-between mb-8">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-20 h-20 rounded-[1.5rem] overflow-hidden border-2 border-white/5 relative group-hover:scale-110 transition-transform duration-500 shadow-2xl">
+                                    <div className="flex items-center gap-5 flex-1 min-w-0 pr-4">
+                                        <div className="w-20 h-20 shrink-0 rounded-[1.5rem] overflow-hidden border-2 border-white/5 relative group-hover:scale-110 transition-transform duration-500 shadow-2xl">
                                             {member.avatarUrl ? (
                                                 <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover" />
                                             ) : (

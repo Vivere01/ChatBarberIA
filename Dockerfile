@@ -14,12 +14,13 @@ RUN npx prisma generate
 RUN npm run build
 
 # --- ESTÁGIO DE EXECUÇÃO ---
-# Quando usamos output: "standalone", o Next cria uma pasta otimizada
-# Precisamos rodar o server.js gerado lá dentro.
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Standalone mode requires public and static folders to be copied manually
+RUN cp -r public .next/standalone/public
+RUN mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static
+
 EXPOSE 3000
 
-# Standalone mode requires running from .next/standalone
 CMD ["node", ".next/standalone/server.js"]

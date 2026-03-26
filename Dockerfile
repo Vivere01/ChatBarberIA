@@ -1,5 +1,5 @@
 FROM node:20-alpine
-
+# VERSION-V4
 WORKDIR /app
 
 # 1. Instalar as dependências e ferramentas

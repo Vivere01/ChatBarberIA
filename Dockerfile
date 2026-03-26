@@ -1,6 +1,9 @@
 FROM node:20-alpine
-# VERSION-V4
+# VERSION-V5
 WORKDIR /app
+
+# Instalar dependências necessárias para o Prisma rodar no Alpine
+RUN apk add --no-cache openssl libc6-compat
 
 # 1. Instalar as dependências e ferramentas
 COPY package.json package-lock.json ./

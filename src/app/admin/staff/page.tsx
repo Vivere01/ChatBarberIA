@@ -177,7 +177,7 @@ export default function StaffPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {staff.map((member) => (
-                            <div key={member.id} className="glass-card rounded-[2.5rem] p-8 relative group overflow-visible transition-all hover:border-white/15 bg-dark-800/20 border border-white/5">
+                            <div key={member.id} className="glass-card rounded-[2.5rem] p-8 relative group overflow-visible transition-all hover:border-white/15 bg-dark-800/20 border border-white/5 min-w-0 flex flex-col w-full">
                                 <div className="flex items-start justify-between mb-8">
                                     <div className="flex items-center gap-5 flex-1 min-w-0 pr-4">
                                         <div className="w-20 h-20 shrink-0 rounded-[1.5rem] overflow-hidden border-2 border-white/5 relative group-hover:scale-110 transition-transform duration-500 shadow-2xl">
@@ -190,8 +190,8 @@ export default function StaffPage() {
                                             )}
                                             <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-dark-900 rounded-full shadow-lg" />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-black text-xl font-display italic uppercase tracking-tight text-white line-clamp-1 truncate">{member.name}</h3>
+                                        <div className="flex-1 min-w-0 pr-4">
+                                            <h3 className="font-black text-xl font-display italic uppercase tracking-tight text-white block truncate w-full">{member.name}</h3>
                                             <div className="flex flex-col gap-1 mt-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">{member.role}</span>
                                                 <div className="flex items-center gap-1.5 text-zinc-500">
@@ -202,10 +202,10 @@ export default function StaffPage() {
                                         </div>
                                     </div>
 
-                                    <div className="relative">
+                                    <div className="relative shrink-0 ml-2">
                                         <button
                                             onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                                            className="text-zinc-600 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5"
+                                            className="text-zinc-600 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5 flex items-center justify-center"
                                         >
                                             <MoreVertical className="w-5 h-5" />
                                         </button>

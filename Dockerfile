@@ -17,10 +17,12 @@ RUN npm run build
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Standalone mode requires public and static folders to be copied manually
-RUN cp -r public .next/standalone/public
-RUN mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static
+# Movemos os arquivos do standalone para a raiz para facilitar caminhos
+RUN cp -r .next/standalone/. .
+RUN cp -r .next/static ./.next/static
+RUN cp -r public ./public
 
 EXPOSE 3000
 
-CMD ["node", ".next/standalone/server.js"]
+# Agora rodamos o server.js que está na raiz
+CMD ["node", "server.js"]

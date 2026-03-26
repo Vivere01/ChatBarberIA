@@ -21,8 +21,9 @@ export const authOptions: NextAuthOptions = {
 
                 // Acesso rápido para desenvolvimento/homologação
                 if (credentials.email === "admin@gmail.com" && credentials.password === "admin") {
+                    const existingOwner = await prisma.owner.findUnique({ where: { email: "admin@gmail.com" } });
                     return {
-                        id: "admin-dev-id",
+                        id: existingOwner?.id || "admin-dev-id",
                         email: "admin@gmail.com",
                         name: "Administrador ChatBarber",
                         role: "OWNER",
@@ -70,12 +71,43 @@ export const authOptions: NextAuthOptions = {
                 };
             },
         }),
+        CredentialsProvider({
+            id: "client-login",
+            name: "Client",
+            credentials: {
+                email: { label: "Email", type: "email" },
+                password: { label: "Senha", type: "password" },
+                ownerId: { label: "Owner", type: "text" },
+            },
+            async authorize(credentials) {
+                if (!credentials?.email || !credentials?.password || !credentials?.ownerId) return null;
+                const client = await prisma.client.findFirst({
+                    where: { 
+                        email: credentials.email, 
+                        ownerId: credentials.ownerId,
+                        isActive: true 
+                    },
+                });
+                if (!client || !client.passwordHash) return null;
+                const isValid = await bcrypt.compare(credentials.password, client.passwordHash);
+                if (!isValid) return null;
+                return {
+                    id: client.id,
+                    email: client.email ?? "",
+                    name: client.name,
+                    role: "CLIENT",
+                    ownerId: client.ownerId,
+                    image: client.avatarUrl,
+                };
+            },
+        }),
     ],
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
                 token.role = (user as any).role;
                 token.storeId = (user as any).storeId;
+                token.ownerId = (user as any).ownerId;
             }
             return token;
         },
@@ -84,8 +116,12 @@ export const authOptions: NextAuthOptions = {
                 (session.user as any).id = token.sub;
                 (session.user as any).role = token.role;
                 (session.user as any).storeId = token.storeId;
+                (session.user as any).ownerId = token.ownerId;
             }
             return session;
         },
     },
 };
+import { getServerSession } from "next-auth";
+
+export const getAuthSession = () => getServerSession(authOptions);

@@ -1,0 +1,151 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Calendar, Clock, User, Scissors, ChevronRight, Loader2, CalendarX } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { getClientAppointments } from "@/app/actions/appointment-actions";
+
+const statusConfig: Record<string, { label: string; class: string }> = {
+    SCHEDULED: { label: "Agendado", class: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+    CONFIRMED: { label: "Confirmado", class: "bg-green-500/10 text-green-500 border-green-500/20" },
+    COMPLETED: { label: "Concluído", class: "bg-zinc-500/10 text-zinc-400 border-zinc-500/10" },
+    CANCELLED: { label: "Cancelado", class: "bg-red-500/10 text-red-500 border-red-500/20" },
+};
+
+export default function ClientAppointmentsPage() {
+    const { storeId } = useParams() as { storeId: string };
+    const [appointments, setAppointments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadAppointments = async () => {
+            setLoading(true);
+            try {
+                const data = await getClientAppointments(storeId);
+                setAppointments(data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadAppointments();
+    }, [storeId]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <Loader2 className="w-10 h-10 text-orange-600 animate-spin" />
+                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Carregando seus agendamentos...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-xl mx-auto py-6 md:py-10 space-y-8">
+            <header className="flex items-center justify-between px-2">
+                <div>
+                    <h1 className="text-2xl font-black italic uppercase tracking-tight text-zinc-900 group flex items-center gap-2">
+                        Meus <span className="text-orange-600">Agendamentos</span>
+                    </h1>
+                    <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest mt-1">Histórico completo de visitas</p>
+                </div>
+                <Link 
+                    href={`/booking/${storeId}/agendar`}
+                    className="w-12 h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-orange-600 transition-all active:scale-95"
+                >
+                    <PlusIcon className="w-6 h-6" />
+                </Link>
+            </header>
+
+            {appointments.length === 0 ? (
+                <div className="py-20 flex flex-col items-center text-center px-6">
+                    <div className="w-20 h-20 bg-zinc-50 rounded-[2rem] flex items-center justify-center mb-6 text-zinc-200 border border-zinc-100 shadow-inner">
+                        <CalendarX className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-black italic uppercase tracking-tight text-zinc-900">Nenhum agendamento ativo</h3>
+                    <p className="text-zinc-500 text-sm mt-2 max-w-[240px] font-medium leading-relaxed">Você ainda não possui horários marcados nesta unidade.</p>
+                    <Link 
+                        href={`/booking/${storeId}/agendar`}
+                        className="mt-8 bg-orange-600 text-white px-8 py-4 rounded-2xl font-black italic uppercase tracking-widest text-[10px] hover:bg-zinc-900 transition-all shadow-xl shadow-orange-600/20 active:scale-95"
+                    >
+                        Agendar agora →
+                    </Link>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {appointments.map((apt) => {
+                        const status = statusConfig[apt.status] || statusConfig.SCHEDULED;
+                        const date = new Date(apt.scheduledAt);
+                        const servicesList = apt.items.map((i: any) => i.service?.name).filter(Boolean).join(", ");
+
+                        return (
+                            <div key={apt.id} className="bg-white border border-zinc-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn("text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border", status.class)}>
+                                                {status.label}
+                                            </span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">#{apt.id.slice(-5)}</span>
+                                        </div>
+                                        <h4 className="text-lg font-black italic uppercase tracking-tight text-zinc-900 line-clamp-1">{servicesList || "Serviço não especificado"}</h4>
+                                    </div>
+                                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:bg-orange-50 group-hover:border-orange-100 transition-all overflow-hidden">
+                                        {apt.staff?.avatarUrl ? (
+                                            <img src={apt.staff.avatarUrl} alt={apt.staff.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-5 h-5 text-zinc-400 group-hover:text-orange-600 transition-colors" />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400">
+                                            <Calendar className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Data</p>
+                                            <p className="text-xs font-bold text-zinc-900">{date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400">
+                                            <Clock className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Horário</p>
+                                            <p className="text-xs font-bold text-zinc-900">
+                                                {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-5 border-t border-zinc-50 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Scissors className="w-3.5 h-3.5 text-orange-600" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total</span>
+                                        <span className="text-sm font-black text-zinc-900 ml-1">R$ {apt.totalAmount.toFixed(2)}</span>
+                                    </div>
+                                    <button className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-orange-600 hover:gap-2 transition-all">
+                                        Ver Detalhes <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PlusIcon({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    )
+}

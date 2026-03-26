@@ -1,13 +1,19 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getEffectiveStoreId } from "./shared";
+import { getEffectiveStoreId, getEffectiveOwnerId } from "./shared";
 
 export async function getServicesList() {
     try {
-        const storeId = await getEffectiveStoreId();
+        const ownerId = await getEffectiveOwnerId();
         const services = await prisma.service.findMany({
-            where: { storeId, isActive: true },
+            where: { 
+                store: { ownerId },
+                isActive: true 
+            },
+            include: {
+                store: { select: { name: true } }
+            },
             orderBy: { createdAt: 'desc' }
         });
         return services;
@@ -23,9 +29,10 @@ export async function createService(data: {
     price: number;
     durationMinutes: number;
     category?: string;
+    storeId?: string;
 }) {
     try {
-        const storeId = await getEffectiveStoreId();
+        const storeId = data.storeId || await getEffectiveStoreId();
 
         const service = await prisma.service.create({
             data: {
@@ -42,5 +49,38 @@ export async function createService(data: {
     } catch (err: any) {
         console.error("Action Error [createService]:", err);
         return { success: false, error: err.message || "Erro ao salvar serviço." };
+    }
+}
+
+export async function updateService(id: string, data: any) {
+    try {
+        const storeId = data.storeId || await getEffectiveStoreId();
+        const service = await prisma.service.update({
+            where: { id, storeId },
+            data: {
+                name: data.name,
+                description: data.description,
+                price: data.price,
+                durationMinutes: data.durationMinutes,
+                category: data.category,
+            }
+        });
+        return { success: true, service };
+    } catch (err: any) {
+        console.error("Action Error [updateService]:", err);
+        return { success: false, error: err.message || "Erro ao atualizar." };
+    }
+}
+
+export async function deleteService(id: string) {
+    try {
+        const storeId = await getEffectiveStoreId();
+        await prisma.service.delete({
+            where: { id, storeId }
+        });
+        return { success: true };
+    } catch (err: any) {
+        console.error("Action Error [deleteService]:", err);
+        return { success: false, error: err.message || "Erro ao excluir." };
     }
 }

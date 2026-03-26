@@ -25,8 +25,13 @@ export async function getEffectiveStoreId() {
         });
     }
 
+    // Prioritize the store that has services or staff, or the oldest one
     let store = await prisma.store.findFirst({
-        where: { ownerId: owner.id }
+        where: { ownerId: owner.id },
+        orderBy: [
+            { services: { _count: 'desc' } },
+            { createdAt: 'asc' }
+        ]
     });
 
     if (!store) {

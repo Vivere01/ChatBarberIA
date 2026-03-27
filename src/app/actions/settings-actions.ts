@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 export async function getGatewaySettings() {
     try {
         const session = await getAuthSession();
-        if (!session || session.user.role !== 'OWNER') {
+        if (!session?.user || session.user.role !== 'OWNER') {
             return { error: "Não autorizado." };
         }
 
@@ -32,7 +32,7 @@ export async function updateGatewaySettings(data: {
 }) {
     try {
         const session = await getAuthSession();
-        if (!session || session.user.role !== 'OWNER') {
+        if (!session?.user || session.user.role !== 'OWNER') {
             return { error: "Não autorizado." };
         }
 

@@ -91,12 +91,13 @@ export async function updateWaitlistStatus(id: string, status: "PENDING" | "FULF
 export async function getClientWaitlist(storeId: string) {
     try {
         const session = await getAuthSession();
-        if (!(session?.user as any)?.id) return [];
+        const userId = (session?.user as any)?.id;
+        if (!userId) return [];
 
         const entries = await prisma.waitlistEntry.findMany({
             where: {
                 storeId,
-                client: { id: (session.user as any).id }, // We have the ID in session
+                clientId: userId,
                 status: 'PENDING'
             },
             include: {

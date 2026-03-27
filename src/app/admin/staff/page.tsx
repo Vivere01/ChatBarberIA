@@ -191,7 +191,7 @@ export default function StaffPage() {
                                             <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-dark-900 rounded-full shadow-lg" />
                                         </div>
                                         <div className="flex-1 min-w-0 pr-4">
-                                            <h3 className="font-black text-xl font-display italic uppercase tracking-tight text-white block truncate w-full">{member.name}</h3>
+                                            <h3 className="font-black text-base font-display italic uppercase text-white block truncate w-full">{member.name}</h3>
                                             <div className="flex flex-col gap-1 mt-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">{member.role}</span>
                                                 <div className="flex items-center gap-1.5 text-zinc-500">

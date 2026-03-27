@@ -182,7 +182,7 @@ export default function SettingsPage() {
 
                         {activeTab !== "Geral" && activeTab !== "Pagamentos" && (
                             <div className="glass-card rounded-3xl p-12 flex flex-col items-center justify-center text-center opacity-40">
-                                <item.icon className="w-12 h-12 text-zinc-600 mb-4" />
+                                <Settings className="w-12 h-12 text-zinc-600 mb-4" />
                                 <h2 className="font-bold underline decoration-zinc-700/50 underline-offset-4">Área em Desenvolvimento</h2>
                                 <p className="text-sm text-zinc-500 mt-1 max-w-xs">Esta funcionalidade será liberada nas próximas atualizações do painel administrativo.</p>
                             </div>

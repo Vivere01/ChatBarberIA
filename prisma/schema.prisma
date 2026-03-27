@@ -119,6 +119,8 @@ model Owner {
   banners           Banner[]
   campaigns         Campaign[]
   referralCampaigns ReferralCampaign[]
+  celcashToken      String?
+  celcashPublicToken String?
   aiContext         AiContext?
 
   @@map("owners")

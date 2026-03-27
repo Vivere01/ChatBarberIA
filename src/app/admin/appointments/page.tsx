@@ -10,6 +10,7 @@ import { createAdminAppointment, getAppointments, updateAppointmentStatus, delet
 import { getStaffList } from "@/app/actions/staff-actions";
 import { getServicesList } from "@/app/actions/service-actions";
 import { getClientsList } from "@/app/actions/client-actions";
+import { getWaitlistEntries, updateWaitlistStatus } from "@/app/actions/waitlist-actions";
 
 export default function AppointmentsPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -17,6 +18,8 @@ export default function AppointmentsPage() {
     const [staff, setStaff] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
+    const [waitlist, setWaitlist] = useState<any[]>([]);
+    const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -37,16 +40,18 @@ export default function AppointmentsPage() {
     const loadData = async () => {
         setFetching(true);
         try {
-            const [apptData, staffData, serviceData, clientData] = await Promise.all([
+            const [apptData, staffData, serviceData, clientData, waitData] = await Promise.all([
                 getAppointments(selectedDate),
                 getStaffList(),
                 getServicesList(),
                 getClientsList(),
+                getWaitlistEntries(selectedDate),
             ]);
             setAppointments(apptData || []);
             setStaff(staffData?.filter((s:any) => s.isActive !== false) || []);
             setServices(serviceData || []);
             setClients(clientData || []);
+            setWaitlist(waitData || []);
         } catch (err) {
             console.error("Erro ao carregar agenda:", err);
         } finally {
@@ -127,23 +132,43 @@ export default function AppointmentsPage() {
                 </div>
 
                 {/* Week Mini Calendar */}
-                <div className="grid grid-cols-7 gap-3">
-                    {weekDays.map((day) => (
-                        <button key={day.toString()} onClick={() => setSelectedDate(day)} className={`flex flex-col items-center py-5 h-28 justify-center rounded-3xl border-2 transition-all ${
-                            isSameDay(day, selectedDate) ? "bg-brand-500/10 border-brand-500/40" : "bg-dark-800/50 border-white/5 hover:border-white/10"
-                        }`}>
-                            <span className={`text-[10px] font-bold uppercase mb-2 ${isSameDay(day, selectedDate) ? "text-brand-400" : "text-zinc-600"}`}>
-                                {format(day, "EEEE", { locale: ptBR })}
+                <div className="flex gap-6 items-start">
+                    <div className="grid grid-cols-7 gap-3 flex-1">
+                        {weekDays.map((day) => (
+                            <button key={day.toString()} onClick={() => setSelectedDate(day)} className={`flex flex-col items-center py-5 h-28 justify-center rounded-3xl border-2 transition-all ${
+                                isSameDay(day, selectedDate) ? "bg-brand-500/10 border-brand-500/40" : "bg-dark-800/50 border-white/5 hover:border-white/10"
+                            }`}>
+                                <span className={`text-[10px] font-bold uppercase mb-2 ${isSameDay(day, selectedDate) ? "text-brand-400" : "text-zinc-600"}`}>
+                                    {format(day, "EEEE", { locale: ptBR })}
+                                </span>
+                                <span className={`text-2xl font-bold font-display ${isSameDay(day, selectedDate) ? "text-white" : "text-zinc-400"}`}>
+                                    {format(day, "dd")}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Waitlist Sidebar Panel Toggle */}
+                    <button 
+                        onClick={() => setIsWaitlistOpen(!isWaitlistOpen)}
+                        className={`relative w-80 h-28 glass-card rounded-3xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${
+                            isWaitlistOpen ? 'border-brand-500/40 bg-brand-500/5' : 'border-white/5 hover:border-brand-500/20'
+                        }`}
+                    >
+                        <Clock className={`w-6 h-6 ${isWaitlistOpen ? 'text-brand-400' : 'text-zinc-500'}`} />
+                        <span className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Lista de Encaixe</span>
+                        {waitlist.length > 0 && (
+                            <span className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-black shadow-lg shadow-red-500/20 border-2 border-dark-900 animate-bounce">
+                                {waitlist.length}
                             </span>
-                            <span className={`text-2xl font-bold font-display ${isSameDay(day, selectedDate) ? "text-white" : "text-zinc-400"}`}>
-                                {format(day, "dd")}
-                            </span>
-                        </button>
-                    ))}
+                        )}
+                    </button>
                 </div>
 
-                {/* Agenda Grid */}
-                <div className="glass-card rounded-3xl border border-white/10 overflow-hidden">
+                <div className="flex gap-6">
+                    <div className="flex-1 min-w-0">
+                        {/* Agenda Grid or Table */}
+                        <div className="glass-card rounded-3xl border border-white/10 overflow-hidden">
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full border-collapse">
                             <thead>
@@ -234,6 +259,59 @@ export default function AppointmentsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Waitlist Panel */}
+            {isWaitlistOpen && (
+                        <div className="w-80 flex-shrink-0 space-y-4 animate-in slide-in-from-right duration-300">
+                            <div className="glass-card rounded-3xl border border-white/10 p-6">
+                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-brand-400 mb-6 flex items-center gap-2">
+                                    <Clock className="w-4 h-4" /> Aguardando Encaixe
+                                </h3>
+                                
+                                {waitlist.length === 0 ? (
+                                    <p className="text-xs text-zinc-600 italic">Nenhum cliente na lista de encaixe para hoje.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {waitlist.map((entry) => (
+                                            <div key={entry.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3 hover:border-brand-500/20 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-full bg-dark-700 flex items-center justify-center text-xs font-bold text-brand-400">
+                                                        {entry.client.name.charAt(0)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold truncate text-white">{entry.client.name}</p>
+                                                        <p className="text-[10px] text-zinc-500">{entry.client.phone}</p>
+                                                    </div>
+                                                </div>
+                                                {entry.notes && <p className="text-[10px] text-zinc-500 line-clamp-2">{entry.notes}</p>}
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={async () => {
+                                                            await updateWaitlistStatus(entry.id, 'FULFILLED');
+                                                            loadData();
+                                                        }}
+                                                        className="flex-1 py-1.5 bg-green-500/20 text-green-400 text-[9px] font-black uppercase rounded-lg border border-green-500/10 hover:bg-green-500/30"
+                                                    >
+                                                        Encaixar
+                                                    </button>
+                                                    <button 
+                                                        onClick={async () => {
+                                                            await updateWaitlistStatus(entry.id, 'CANCELLED');
+                                                            loadData();
+                                                        }}
+                                                        className="py-1.5 px-3 bg-red-500/10 text-red-500 text-[9px] font-black uppercase rounded-lg border border-red-500/10 hover:bg-red-500/20"
+                                                    >
+                                                        X
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Agendamento">
                 <form onSubmit={handleCreate} className="space-y-5">

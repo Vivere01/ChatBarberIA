@@ -6,32 +6,39 @@ import { Calendar, Clock, User, Scissors, ChevronRight, Loader2, CalendarX } fro
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getClientAppointments } from "@/app/actions/appointment-actions";
+import { getClientWaitlist } from "@/app/actions/waitlist-actions";
 
 const statusConfig: Record<string, { label: string; class: string }> = {
     SCHEDULED: { label: "Agendado", class: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
     CONFIRMED: { label: "Confirmado", class: "bg-green-500/10 text-green-500 border-green-500/20" },
     COMPLETED: { label: "Concluído", class: "bg-zinc-500/10 text-zinc-400 border-zinc-500/10" },
     CANCELLED: { label: "Cancelado", class: "bg-red-500/10 text-red-500 border-red-500/20" },
+    WAITING: { label: "Aguardando Encaixe", class: "bg-orange-500/10 text-orange-600 border-orange-500/20 animate-pulse" },
 };
 
 export default function ClientAppointmentsPage() {
     const { storeId } = useParams() as { storeId: string };
     const [appointments, setAppointments] = useState<any[]>([]);
+    const [waitlist, setWaitlist] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadAppointments = async () => {
+        const loadData = async () => {
             setLoading(true);
             try {
-                const data = await getClientAppointments(storeId);
-                setAppointments(data);
+                const [apptData, waitData] = await Promise.all([
+                    getClientAppointments(storeId),
+                    getClientWaitlist(storeId)
+                ]);
+                setAppointments(apptData || []);
+                setWaitlist(waitData || []);
             } catch (err) {
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
-        loadAppointments();
+        loadData();
     }, [storeId]);
 
     if (loading) {
@@ -60,13 +67,13 @@ export default function ClientAppointmentsPage() {
                 </Link>
             </header>
 
-            {appointments.length === 0 ? (
+            {appointments.length === 0 && waitlist.length === 0 ? (
                 <div className="py-20 flex flex-col items-center text-center px-6">
                     <div className="w-20 h-20 bg-zinc-50 rounded-[2rem] flex items-center justify-center mb-6 text-zinc-200 border border-zinc-100 shadow-inner">
                         <CalendarX className="w-10 h-10" />
                     </div>
                     <h3 className="text-xl font-black italic uppercase tracking-tight text-zinc-900">Nenhum agendamento ativo</h3>
-                    <p className="text-zinc-500 text-sm mt-2 max-w-[240px] font-medium leading-relaxed">Você ainda não possui horários marcados nesta unidade.</p>
+                    <p className="text-zinc-500 text-sm mt-2 max-w-[240px] font-medium leading-relaxed">Você ainda não possui horários marcados ou na fila de espera nesta unidade.</p>
                     <Link 
                         href={`/booking/${storeId}/agendar`}
                         className="mt-8 bg-orange-600 text-white px-8 py-4 rounded-2xl font-black italic uppercase tracking-widest text-[10px] hover:bg-zinc-900 transition-all shadow-xl shadow-orange-600/20 active:scale-95"
@@ -76,6 +83,43 @@ export default function ClientAppointmentsPage() {
                 </div>
             ) : (
                 <div className="space-y-4">
+                    {/* Render Waitlist Cards First */}
+                    {waitlist.map((entry) => (
+                        <div key={entry.id} className="bg-orange-50/10 border border-orange-500/20 rounded-[2rem] p-6 shadow-sm relative overflow-hidden ring-2 ring-orange-500/5 transition-all">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 bg-orange-500 rounded-bl-3xl">
+                                <Clock className="w-12 h-12" />
+                            </div>
+                            <div className="flex items-start justify-between mb-6">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-orange-500/10 text-orange-600 border-orange-500/20 animate-pulse">
+                                            Aguardando Encaixe
+                                        </span>
+                                    </div>
+                                    <h4 className="text-lg font-black italic uppercase tracking-tight text-zinc-900">Pedido de Encaixe</h4>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl bg-orange-500/5 flex items-center justify-center text-orange-600/50">
+                                    <Calendar className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Data Desejada</p>
+                                    <p className="text-xs font-bold text-zinc-900">{new Date(entry.requestedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
+                                </div>
+                            </div>
+                            {entry.notes && (
+                                <p className="mt-4 text-[11px] font-medium text-zinc-500 leading-normal border-l-2 border-orange-500/10 pl-3">
+                                    "{entry.notes}"
+                                </p>
+                            )}
+                            <div className="mt-4 pt-4 border-t border-orange-500/5 flex items-center justify-between">
+                                <p className="text-[9px] font-bold text-zinc-400 italic">Notificaremos assim que houver uma vaga!</p>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Render Appointment Cards */}
                     {appointments.map((apt) => {
                         const status = statusConfig[apt.status] || statusConfig.SCHEDULED;
                         const date = new Date(apt.scheduledAt);

@@ -30,9 +30,16 @@ export async function createClient(data: {
     phone?: string;
     cpf?: string;
     clientType: string;
+    password?: string;
+    birthDate?: string;
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
+
+        let passwordHash = undefined;
+        if (data.password) {
+            passwordHash = await bcrypt.hash(data.password, 10);
+        }
 
         const client = await prisma.client.create({
             data: {
@@ -41,6 +48,8 @@ export async function createClient(data: {
                 email: data.email,
                 phone: data.phone,
                 cpf: data.cpf,
+                passwordHash,
+                birthDate: data.birthDate ? new Date(data.birthDate) : null,
                 clientType: resolveClientType(data.clientType),
                 totalSpent: 0,
             }
@@ -104,6 +113,7 @@ export async function updateClient(id: string, data: any) {
                 email: data.email,
                 phone: data.phone,
                 cpf: data.cpf,
+                birthDate: data.birthDate ? new Date(data.birthDate) : null,
                 clientType: resolveClientType(data.clientType),
             }
         });

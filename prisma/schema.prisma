@@ -158,6 +158,7 @@ model Store {
   clientStores    ClientStore[]
   banners         Banner[]
   npsRatings      NpsRating[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([ownerId])
   @@map("stores")
@@ -243,6 +244,7 @@ model Client {
   clientStores      ClientStore[]
   appointments      Appointment[]
   subscription      ClientSubscription?
+  waitlistEntries   WaitlistEntry[]
   npsRatings        NpsRating[]
   referralLinks     ReferralLink[]     @relation("ClientPromoter")
   referralConverted ReferralConversion? @relation("ConvertedClient")
@@ -266,6 +268,29 @@ model ClientStore {
 
   @@unique([clientId, storeId])
   @@map("client_stores")
+}
+
+enum WaitlistStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+model WaitlistEntry {
+  id              String      @id @default(cuid())
+  storeId         String
+  clientId        String
+  requestedDate   DateTime
+  notes           String?
+  status          WaitlistStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  client          Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@map("waitlist_entries")
 }
 
 // ─────────────────────────────────────────────────────────────

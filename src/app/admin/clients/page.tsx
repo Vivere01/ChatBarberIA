@@ -24,6 +24,8 @@ export default function ClientsPage() {
         phone: "",
         cpf: "",
         clientType: "WALK_IN",
+        password: "",
+        birthDate: "",
     });
 
     useEffect(() => {
@@ -53,6 +55,8 @@ export default function ClientsPage() {
                 phone: formData.phone,
                 cpf: formData.cpf,
                 clientType: formData.clientType,
+                password: formData.password || undefined,
+                birthDate: formData.birthDate || undefined,
             };
 
             const result = editingClient
@@ -89,6 +93,8 @@ export default function ClientsPage() {
             phone: client.phone || "",
             cpf: client.cpf || "",
             clientType: client.clientType,
+            password: "", // Don't show password hash
+            birthDate: client.birthDate ? new Date(client.birthDate).toISOString().split('T')[0] : "",
         });
         setIsModalOpen(true);
         setOpenMenuId(null);
@@ -97,7 +103,7 @@ export default function ClientsPage() {
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingClient(null);
-        setFormData({ name: "", email: "", phone: "", cpf: "", clientType: "WALK_IN" });
+        setFormData({ name: "", email: "", phone: "", cpf: "", clientType: "WALK_IN", password: "", birthDate: "" });
     };
 
     const filteredClients = clients.filter(c =>
@@ -268,14 +274,38 @@ export default function ClientsPage() {
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">Email</label>
+                            <input
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="cliente@exemplo.com"
+                                className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 transition-all font-medium"
+                            />
+                        </div>
+                        {!editingClient && (
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-2">Senha Provisória</label>
+                                <input
+                                    type="text"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    placeholder="Senha para o cliente logar"
+                                    className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 transition-all font-medium"
+                                />
+                            </div>
+                        )}
+                    </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">Email</label>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">Data de Nascimento</label>
                         <input
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            placeholder="cliente@exemplo.com"
-                            className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 transition-all font-medium"
+                            type="date"
+                            value={formData.birthDate}
+                            onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                            className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500/50 transition-all font-medium"
                         />
                     </div>
 

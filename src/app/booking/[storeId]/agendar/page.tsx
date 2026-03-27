@@ -3,7 +3,7 @@
 import { 
     MapPin, Users, Scissors, Calendar, 
     ArrowRight, Check, ChevronRight, X, User,
-    Loader2
+    Loader2, Clock
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import { getStoreForBooking } from "@/app/actions/booking-actions";
 import { getStoreBranches } from "@/app/actions/store-actions";
 import { createAppointment } from "@/app/actions/appointment-actions";
+import { createClientWaitlistEntry } from "@/app/actions/waitlist-actions";
 
 export default function BookingFlowPage({ params }: { params: { storeId: string } }) {
     const router = useRouter();
@@ -32,8 +33,10 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
         branch: false,
         staff: false,
         services: false,
-        date: false
+        date: false,
+        waitlist: false
     });
+    const [waitlistNotes, setWaitlistNotes] = useState("");
 
     useEffect(() => {
         const fetchData = async () => {
@@ -104,6 +107,28 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
     });
 
     const [bookingLoading, setBookingLoading] = useState(false);
+
+    const handleWaitlist = async () => {
+        if (!selection.date) return;
+        setBookingLoading(true);
+        try {
+            const [day, month, year] = selection.date.split('/').map(Number);
+            const requestedDate = new Date(year, month - 1, day);
+
+            const result = await createClientWaitlistEntry({
+                storeId,
+                requestedDate,
+                notes: waitlistNotes
+            });
+
+            if (result.success) {
+                setModalOpen({ ...modalOpen, waitlist: false });
+                router.push(`/booking/${storeId}/agendamentos`);
+            } else {
+                alert(result.error);
+            }
+        } catch (err) { alert("Erro ao entrar na lista."); } finally { setBookingLoading(false); }
+    };
 
     const handleBooking = async () => {
         if (!selection.staff || selection.services.length === 0 || !selection.date || !selection.time) return;
@@ -251,8 +276,49 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                     </button>
                                 ))}
                             </div>
+
+                            <div className="pt-8 border-t border-zinc-50">
+                                <button 
+                                    onClick={() => setModalOpen({ ...modalOpen, waitlist: true, date: false })}
+                                    className="w-full py-4 rounded-2xl border-2 border-dashed border-zinc-100 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:border-orange-200 hover:text-orange-600 transition-all"
+                                >
+                                    <Clock className="w-4 h-4" /> Não encontrou seu horário? Solicite um encaixe
+                                </button>
+                            </div>
                         </div>
                     )}
+                </div>
+            </Modal>
+
+            {/* Waitlist Modal */}
+            <Modal isOpen={modalOpen.waitlist} onClose={() => setModalOpen({ ...modalOpen, waitlist: false })} title="Solicitar Encaixe">
+                <div className="py-6 space-y-6">
+                    <div className="bg-orange-50 border border-orange-100 rounded-3xl p-6">
+                        <p className="text-xs font-medium text-orange-900 leading-relaxed">
+                            Ao entrar na lista de encaixe, avisaremos você caso surja uma desistência ou brecha na agenda para o dia <span className="font-bold">{selection.date}</span>.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <label className="block">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-2">Alguma observação? (Opcional)</span>
+                            <textarea 
+                                value={waitlistNotes}
+                                onChange={(e) => setWaitlistNotes(e.target.value)}
+                                placeholder="Ex: Estarei por perto às 10h, se vagar me avisem!"
+                                className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl p-4 text-sm font-medium text-zinc-900 focus:border-orange-500 outline-none min-h-[100px]"
+                            />
+                        </label>
+                    </div>
+
+                    <button
+                        onClick={handleWaitlist}
+                        disabled={bookingLoading}
+                        className="w-full h-16 bg-zinc-900 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl active:scale-95 transition-all text-xs flex items-center justify-center gap-3"
+                    >
+                        {bookingLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar na Lista de Espera"}
+                    </button>
+                    <p className="text-center text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Isso não garante o atendimento, mas aumenta suas chances!</p>
                 </div>
             </Modal>
 

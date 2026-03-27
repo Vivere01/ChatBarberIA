@@ -11,6 +11,7 @@ import { getStaffList } from "@/app/actions/staff-actions";
 import { getServicesList } from "@/app/actions/service-actions";
 import { getClientsList } from "@/app/actions/client-actions";
 import { getWaitlistEntries, updateWaitlistStatus } from "@/app/actions/waitlist-actions";
+import { cn } from "@/lib/utils";
 
 export default function AppointmentsPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -30,7 +31,7 @@ export default function AppointmentsPage() {
         clientId: "",
         serviceId: "",
         staffId: "",
-        time: "09:00",
+        time: "09:00"
     });
 
     useEffect(() => {
@@ -40,20 +41,20 @@ export default function AppointmentsPage() {
     const loadData = async () => {
         setFetching(true);
         try {
-            const [apptData, staffData, serviceData, clientData, waitData] = await Promise.all([
+            const [aptRes, staffRes, servRes, clientRes, waitRes] = await Promise.all([
                 getAppointments(selectedDate),
                 getStaffList(),
                 getServicesList(),
                 getClientsList(),
-                getWaitlistEntries(selectedDate),
+                getWaitlistEntries(selectedDate)
             ]);
-            setAppointments(apptData || []);
-            setStaff(staffData?.filter((s:any) => s.isActive !== false) || []);
-            setServices(serviceData || []);
-            setClients(clientData || []);
-            setWaitlist(waitData || []);
+            setAppointments(aptRes);
+            setStaff(staffRes);
+            setServices(servRes);
+            setClients(clientRes);
+            setWaitlist(waitRes);
         } catch (err) {
-            console.error("Erro ao carregar agenda:", err);
+            console.error("Error loading data:", err);
         } finally {
             setFetching(false);
         }
@@ -63,9 +64,12 @@ export default function AppointmentsPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            const result = await createAdminAppointment({...formData, date: selectedDate});
+            const result = await createAdminAppointment({
+                ...formData,
+                date: selectedDate
+            });
             if (result.success) {
-                await loadData();
+                loadData();
                 setIsModalOpen(false);
                 setFormData({ clientId: "", serviceId: "", staffId: "", time: "09:00" });
             } else { alert(result.error); }
@@ -81,12 +85,19 @@ export default function AppointmentsPage() {
         } catch (err) { alert("Erro ao excluir."); }
     };
 
-    const handleStatusUpdate = async (id: string, status: string) => {
+    const handleStatusUpdate = async (id: string, status: "PENDING" | "FULFILLED" | "CANCELLED") => {
+        try {
+            const result = await updateWaitlistStatus(id, status);
+            if (result.success) loadData();
+        } catch (err) { alert("Erro ao atualizar."); }
+    };
+
+    const handleAppointmentStatus = async (id: string, status: string) => {
         try {
             const result = await updateAppointmentStatus(id, status);
             if (result.success) loadData();
             setOpenMenuId(null);
-        } catch (err) { alert("Erro ao atualizar."); }
+        } catch (err) { alert("Erro ao atualizar agenda."); }
     };
 
     const timeSlots = [];
@@ -108,254 +119,217 @@ export default function AppointmentsPage() {
                         </h1>
                         <p className="text-zinc-500 text-sm">Visualizando agenda de hoje</p>
                     </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-dark-800 p-1.5 rounded-2xl border border-white/5">
-                            <button onClick={() => setSelectedDate(subDays(selectedDate, 1))} className="p-1.5 hover:bg-white/5 rounded-xl transition-all"><ChevronLeft className="w-4 h-4" /></button>
-                            <button onClick={() => setSelectedDate(new Date())} className="px-4 py-1.5 bg-brand-gradient text-white text-[10px] font-bold uppercase rounded-xl hover:opacity-90 shadow-brand-sm">Hoje</button>
-                            <button onClick={() => setSelectedDate(addDays(selectedDate, 1))} className="p-1.5 hover:bg-white/5 rounded-xl transition-all"><ChevronRight className="w-4 h-4" /></button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex bg-dark-800 rounded-xl p-1 border border-white/5">
+                            <button onClick={() => setSelectedDate(subDays(selectedDate, 1))} className="p-2 hover:bg-white/5 rounded-lg transition-all text-zinc-400"><ChevronLeft className="w-5 h-5"/></button>
+                            <button onClick={() => setSelectedDate(new Date())} className="px-4 text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-all">Hoje</button>
+                            <button onClick={() => setSelectedDate(addDays(selectedDate, 1))} className="p-2 hover:bg-white/5 rounded-lg transition-all text-zinc-400"><ChevronRight className="w-5 h-5"/></button>
                         </div>
-
-                        <div className="relative group bg-dark-800 p-3 rounded-2xl border border-white/5 flex items-center gap-2 cursor-pointer hover:border-brand-500/30 transition-all">
-                            <span className="text-sm font-bold text-zinc-300">{format(selectedDate, "dd/MM/yyyy")}</span>
-                            <CalendarIcon className="w-4 h-4 opacity-30" />
-                            <input type="date" value={format(selectedDate, "yyyy-MM-dd")} onChange={(e) => {
-                                const [y,m,d] = e.target.value.split('-').map(Number);
-                                setSelectedDate(new Date(y, m-1, d));
-                            }} className="absolute inset-0 opacity-0 cursor-pointer w-full" />
-                        </div>
-
-                        <button onClick={() => setIsModalOpen(true)} className="bg-brand-gradient text-white px-6 py-3 rounded-xl text-sm font-bold shadow-brand flex items-center gap-2 hover:scale-[1.02] transition-all">
-                            <Plus className="w-4 h-4" /> Novo Agendamento
+                        <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="h-12 px-6 bg-brand-gradient text-white rounded-xl font-bold flex items-center gap-2 shadow-brand hover:scale-105 active:scale-95 transition-all text-sm"
+                        >
+                            <Plus className="w-5 h-5" /> Novo Agendamento
                         </button>
                     </div>
                 </div>
 
-                {/* Week Mini Calendar */}
-                <div className="flex gap-6 items-start">
-                    <div className="grid grid-cols-7 gap-3 flex-1">
-                        {weekDays.map((day) => (
-                            <button key={day.toString()} onClick={() => setSelectedDate(day)} className={`flex flex-col items-center py-5 h-28 justify-center rounded-3xl border-2 transition-all ${
-                                isSameDay(day, selectedDate) ? "bg-brand-500/10 border-brand-500/40" : "bg-dark-800/50 border-white/5 hover:border-white/10"
-                            }`}>
-                                <span className={`text-[10px] font-bold uppercase mb-2 ${isSameDay(day, selectedDate) ? "text-brand-400" : "text-zinc-600"}`}>
-                                    {format(day, "EEEE", { locale: ptBR })}
-                                </span>
-                                <span className={`text-2xl font-bold font-display ${isSameDay(day, selectedDate) ? "text-white" : "text-zinc-400"}`}>
-                                    {format(day, "dd")}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
+                <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Calendar Grid */}
+                    <div className="flex-1 space-y-4">
+                        <div className="grid grid-cols-7 gap-2">
+                            {weekDays.map((day, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setSelectedDate(day)}
+                                    className={cn(
+                                        "flex flex-col items-center p-3 rounded-2xl border transition-all",
+                                        isSameDay(day, selectedDate)
+                                            ? "bg-brand-gradient border-brand-500/50 shadow-brand text-white"
+                                            : "bg-dark-800 border-white/5 text-zinc-500 hover:border-white/20"
+                                    )}
+                                >
+                                    <span className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">
+                                        {format(day, "EEE", { locale: ptBR })}
+                                    </span>
+                                    <span className="text-lg font-bold">{format(day, "dd")}</span>
+                                </button>
+                            ))}
+                        </div>
 
-                    {/* Waitlist Sidebar Panel Toggle */}
-                    <button 
-                        onClick={() => setIsWaitlistOpen(!isWaitlistOpen)}
-                        className={`relative w-80 h-28 glass-card rounded-3xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${
-                            isWaitlistOpen ? 'border-brand-500/40 bg-brand-500/5' : 'border-white/5 hover:border-brand-500/20'
-                        }`}
-                    >
-                        <Clock className={`w-6 h-6 ${isWaitlistOpen ? 'text-brand-400' : 'text-zinc-500'}`} />
-                        <span className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Lista de Encaixe</span>
-                        {waitlist.length > 0 && (
-                            <span className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-black shadow-lg shadow-red-500/20 border-2 border-dark-900 animate-bounce">
-                                {waitlist.length}
-                            </span>
-                        )}
-                    </button>
-                </div>
-
-                <div className="flex gap-6">
-                    <div className="flex-1 min-w-0">
-                        {/* Agenda Grid or Table */}
-                        <div className="glass-card rounded-3xl border border-white/10 overflow-hidden">
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="bg-dark-800/80 backdrop-blur-sm border-b border-white/5">
-                                    <th className="p-6 text-left text-[10px] font-bold uppercase text-zinc-600 border-r border-white/5 sticky left-0 z-20 bg-dark-800 w-24">Hora</th>
-                                    {staff.map(member => (
-                                        <th key={member.id} className="p-6 min-w-[280px] border-r border-white/5">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="w-12 h-12 rounded-full border-2 border-brand-500/30 flex items-center justify-center bg-dark-700 text-brand-400 font-bold overflow-hidden shadow-lg">
-                                                    {member.avatarUrl ? <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover" /> : member.name.charAt(0)}
-                                                </div>
-                                                <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-100">{member.name}</span>
+                        <div className="bg-dark-800 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                            <div className="divide-y divide-white/5">
+                                {timeSlots.map(time => {
+                                    const appointment = appointments.find(a => a.scheduledAt.split('T')[1].startsWith(time));
+                                    return (
+                                        <div key={time} className="group flex min-h-[80px] hover:bg-white/[0.02] transition-all">
+                                            <div className="w-24 flex items-center justify-center border-r border-white/5 text-xs font-bold text-zinc-500">
+                                                {time}
                                             </div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {timeSlots.map(time => (
-                                    <tr key={time} className="border-b border-white/[0.03] group">
-                                        <td className="p-4 text-center sticky left-0 z-10 bg-dark-900 border-r border-white/5 text-xs font-bold text-zinc-500 group-hover:text-brand-400 transition-colors">
-                                            {time}
-                                        </td>
-                                        {staff.map(member => {
-                                            const appt = appointments.find(a => 
-                                                a.staffId === member.id && 
-                                                format(new Date(a.scheduledAt), "HH:mm") === time
-                                            );
-                                            
-                                            // Handle multi-slot height? Keep it simple: 1 row per 30m
-                                            return (
-                                                <td key={`${member.id}-${time}`} className="p-2 border-r border-white/5 align-top relative min-h-[90px]">
-                                                    {appt ? (
-                                                        <div className={`p-4 rounded-2xl border flex flex-col justify-between h-full animate-in fade-in zoom-in duration-300 ${
-                                                            appt.status === 'CONFIRMED' ? 'bg-green-500/10 border-green-500/20' :
-                                                            appt.status === 'CANCELLED' ? 'bg-red-500/10 border-red-500/20' :
-                                                            'bg-brand-500/10 border-brand-500/20 shadow-[inset_0_0_20px_rgba(76,62,245,0.05)]'
-                                                        }`}>
-                                                            <div className="flex justify-between items-start mb-2">
-                                                                <h4 className="text-xs font-bold text-white max-w-[80%] flex items-center gap-1.5 flex-wrap">
-                                                                    <span className="truncate block max-w-full">{appt.client.name}</span>
-                                                                    {appt.client.isDefaulter && (
-                                                                        <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-sm uppercase font-black tracking-widest border border-red-500/10">Inadimplente</span>
-                                                                    )}
-                                                                </h4>
-                                                                <div className="relative">
-                                                                    <button onClick={() => setOpenMenuId(openMenuId === appt.id ? null : appt.id)} className="p-1 text-zinc-600 hover:text-white transition-colors">
-                                                                        <MoreVertical className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    {openMenuId === appt.id && (
-                                                                        <div className="absolute right-0 mt-2 w-44 bg-dark-700 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden font-bold">
-                                                                            <button onClick={() => handleStatusUpdate(appt.id, 'CONFIRMED')} className="w-full text-left px-4 py-3 text-[10px] text-zinc-300 hover:bg-white/5 flex items-center gap-2">
-                                                                                <CheckCircle className="w-3.5 h-3.5 text-green-400" /> Presença Confirmada
-                                                                            </button>
-                                                                            <button onClick={() => handleStatusUpdate(appt.id, 'CANCELLED')} className="w-full text-left px-4 py-3 text-[10px] text-zinc-300 hover:bg-white/5 flex items-center gap-2">
-                                                                                <XCircle className="w-3.5 h-3.5 text-yellow-400" /> Marcar como Faltou
-                                                                            </button>
-                                                                            <button onClick={() => handleDelete(appt.id)} className="w-full text-left px-4 py-3 text-[10px] text-red-400 hover:bg-red-500/10 flex items-center gap-2 border-t border-white/5">
-                                                                                <Trash2 className="w-3.5 h-3.5" /> Cancelar Horário
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                            <div className="flex-1 p-3">
+                                                {appointment ? (
+                                                    <div className="h-full bg-dark-700/50 border border-white/5 rounded-2xl p-4 flex items-center justify-between group-hover:border-white/10 transition-all">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20">
+                                                                <User className="w-5 h-5 text-brand-400" />
                                                             </div>
-                                                            <div className="flex items-center gap-2 text-[9px] font-bold text-zinc-400">
-                                                                <Scissors className="w-3 h-3 text-brand-400" />
-                                                                <span className="uppercase">{appt.items[0]?.service.name || "Serviço"}</span>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white flex items-center gap-2">
+                                                                    {appointment.client.name}
+                                                                    {appointment.client.isDefaulter && (
+                                                                        <span className="bg-red-500/10 text-red-500 text-[9px] px-2 py-0.5 rounded-full border border-red-500/20 uppercase font-black">Inadimplente</span>
+                                                                    )}
+                                                                </p>
+                                                                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider mt-1 flex items-center gap-2">
+                                                                    <Scissors className="w-3 h-3" /> {appointment.service.name} • {appointment.staff.name}
+                                                                </p>
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={() => {
-                                                                setFormData({...formData, staffId: member.id, time});
-                                                                setIsModalOpen(true);
-                                                            }}
-                                                            className="w-full h-full min-h-[50px] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white/[0.02] rounded-xl transition-all"
-                                                        >
-                                                            <Plus className="w-4 h-4 text-zinc-800" />
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                                        <div className="relative">
+                                                            <button 
+                                                                onClick={() => setOpenMenuId(openMenuId === appointment.id ? null : appointment.id)}
+                                                                className="p-2 hover:bg-white/5 rounded-lg transition-all text-zinc-500"
+                                                            >
+                                                                <MoreVertical className="w-5 h-5" />
+                                                            </button>
+                                                            {openMenuId === appointment.id && (
+                                                                <div className="absolute right-0 mt-2 w-48 bg-dark-800 border border-white/10 rounded-xl shadow-2xl py-2 z-50">
+                                                                    <button onClick={() => handleAppointmentStatus(appointment.id, 'COMPLETED')} className="w-full px-4 py-2 text-left text-xs font-bold text-emerald-400 hover:bg-white/5 flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Concluído</button>
+                                                                    <button onClick={() => handleDelete(appointment.id)} className="w-full px-4 py-2 text-left text-xs font-bold text-red-400 hover:bg-white/5 flex items-center gap-2"><XCircle className="w-4 h-4" /> Cancelar</button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => { setFormData({ ...formData, time }); setIsModalOpen(true); }}
+                                                        className="w-full h-full border-2 border-dashed border-white/5 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 hover:border-white/10 hover:bg-white/[0.02] transition-all"
+                                                    >
+                                                        <Plus className="w-5 h-5 text-zinc-600" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Waitlist Sidebar */}
+                    <div className="lg:w-80 space-y-4">
+                        <div className="bg-dark-800 border border-white/5 rounded-3xl p-6 shadow-2xl">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                                        <Clock className="w-5 h-5 text-orange-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-sm font-bold text-white">Lista de Encaixe</h2>
+                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{waitlist.length} Clientes</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {waitlist.length === 0 ? (
+                                    <div className="py-8 text-center">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Ninguém na fila</p>
+                                    </div>
+                                ) : (
+                                    waitlist.map((entry) => (
+                                        <div key={entry.id} className="bg-dark-700/30 border border-white/5 rounded-2xl p-4 space-y-3 hover:border-white/10 transition-all">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <p className="text-xs font-bold text-white">{entry.client.name}</p>
+                                                    <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter mt-0.5">{entry.client.phone}</p>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => handleStatusUpdate(entry.id, 'FULFILLED')} className="p-1.5 hover:bg-emerald-500/10 text-emerald-500 rounded-lg transition-all" title="Encaixado"><CheckCircle className="w-4 h-4"/></button>
+                                                    <button onClick={() => handleStatusUpdate(entry.id, 'CANCELLED')} className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-all" title="Remover"><Trash2 className="w-4 h-4"/></button>
+                                                </div>
+                                            </div>
+                                            {entry.notes && (
+                                                <div className="bg-dark-800/50 rounded-lg p-2 border border-white/5">
+                                                    <p className="text-[9px] text-zinc-400 leading-relaxed italic italic">"{entry.notes}"</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Waitlist Panel */}
-            {isWaitlistOpen && (
-                        <div className="w-80 flex-shrink-0 space-y-4 animate-in slide-in-from-right duration-300">
-                            <div className="glass-card rounded-3xl border border-white/10 p-6">
-                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-brand-400 mb-6 flex items-center gap-2">
-                                    <Clock className="w-4 h-4" /> Aguardando Encaixe
-                                </h3>
-                                
-                                {waitlist.length === 0 ? (
-                                    <p className="text-xs text-zinc-600 italic">Nenhum cliente na lista de encaixe para hoje.</p>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {waitlist.map((entry) => (
-                                            <div key={entry.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3 hover:border-brand-500/20 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-dark-700 flex items-center justify-center text-xs font-bold text-brand-400">
-                                                        {entry.client.name.charAt(0)}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs font-bold truncate text-white">{entry.client.name}</p>
-                                                        <p className="text-[10px] text-zinc-500">{entry.client.phone}</p>
-                                                    </div>
-                                                </div>
-                                                {entry.notes && <p className="text-[10px] text-zinc-500 line-clamp-2">{entry.notes}</p>}
-                                                <div className="flex gap-2">
-                                                    <button 
-                                                        onClick={async () => {
-                                                            await updateWaitlistStatus(entry.id, 'FULFILLED');
-                                                            loadData();
-                                                        }}
-                                                        className="flex-1 py-1.5 bg-green-500/20 text-green-400 text-[9px] font-black uppercase rounded-lg border border-green-500/10 hover:bg-green-500/30"
-                                                    >
-                                                        Encaixar
-                                                    </button>
-                                                    <button 
-                                                        onClick={async () => {
-                                                            await updateWaitlistStatus(entry.id, 'CANCELLED');
-                                                            loadData();
-                                                        }}
-                                                        className="py-1.5 px-3 bg-red-500/10 text-red-500 text-[9px] font-black uppercase rounded-lg border border-red-500/10 hover:bg-red-500/20"
-                                                    >
-                                                        X
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+            {/* Modal de Agendamento */}
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Agendamento">
+                <form onSubmit={handleCreate} className="space-y-6">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">Cliente</label>
+                            <select 
+                                required
+                                value={formData.clientId}
+                                onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                                className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                            >
+                                <option value="">Selecionar Cliente</option>
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name} {c.isDefaulter ? "(INADIMPLENTE)" : ""}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">Profissional</label>
+                                <select 
+                                    required
+                                    value={formData.staffId}
+                                    onChange={(e) => setFormData({ ...formData, staffId: e.target.value })}
+                                    className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                                >
+                                    <option value="">Selecionar</option>
+                                    {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">Serviço</label>
+                                <select 
+                                    required
+                                    value={formData.serviceId}
+                                    onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
+                                    className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                                >
+                                    <option value="">Selecionar</option>
+                                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
                             </div>
                         </div>
-                    )}
-                </div>
-
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Agendamento">
-                <form onSubmit={handleCreate} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">Cliente</label>
-                        <select required value={formData.clientId} onChange={(e) => setFormData({...formData, clientId: e.target.value})} className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500/50">
-                            <option value="">Selecionar cliente...</option>
-                            {clients.map(c => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` — ${c.phone}` : ""}</option>)}
-                        </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">Serviço</label>
-                            <select required value={formData.serviceId} onChange={(e) => setFormData({...formData, serviceId: e.target.value})} className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500/50">
-                                <option value="">Selecionar...</option>
-                                {services.map(s => <option key={s.id} value={s.id}>{s.name} - R$ {s.price}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">Barbeiro</label>
-                            <select required value={formData.staffId} onChange={(e) => setFormData({...formData, staffId: e.target.value})} className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500/50">
-                                <option value="">Selecionar...</option>
-                                {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">Horário</label>
-                            <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500/50">
-                                {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">Data</label>
-                            <div className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-zinc-400">
-                                {format(selectedDate, "dd/MM/yyyy")}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">Horário</label>
+                                <select 
+                                    value={formData.time}
+                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                    className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                                >
+                                    {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">Data</label>
+                                <div className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 flex items-center text-sm font-medium text-zinc-400">
+                                    {format(selectedDate, "dd/MM/yyyy")}
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div className="pt-8 flex gap-3">
-                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 text-zinc-400 font-semibold hover:bg-white/5 rounded-xl transition-all">Cancelar</button>
-                        <button type="submit" disabled={loading} className="flex-3 bg-brand-gradient text-white py-3 px-8 rounded-xl font-bold hover:opacity-90 shadow-brand transition-all flex justify-center">
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirmar Agendamento"}
+                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 text-zinc-400 font-bold hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest text-[10px]">Cancelar</button>
+                        <button type="submit" disabled={loading} className="flex-[2] bg-brand-gradient text-white py-4 px-8 rounded-xl font-black uppercase tracking-widest shadow-brand hover:scale-[1.02] active:scale-95 transition-all text-[11px] flex items-center justify-center gap-2">
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirmar Agendamento</>}
                         </button>
                     </div>
                 </form>

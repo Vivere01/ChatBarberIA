@@ -7,12 +7,12 @@ import { revalidatePath } from "next/cache";
 export async function getGatewaySettings() {
     try {
         const session = await getAuthSession();
-        if (!session?.user || session.user.role !== 'OWNER') {
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
             return { error: "Não autorizado." };
         }
 
         const owner = await prisma.owner.findUnique({
-            where: { id: session.user.id },
+            where: { id: (session.user as any).id },
             select: {
                 celcashToken: true,
                 celcashPublicToken: true
@@ -32,12 +32,12 @@ export async function updateGatewaySettings(data: {
 }) {
     try {
         const session = await getAuthSession();
-        if (!session?.user || session.user.role !== 'OWNER') {
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
             return { error: "Não autorizado." };
         }
 
         await prisma.owner.update({
-            where: { id: session.user.id },
+            where: { id: (session.user as any).id },
             data: {
                 celcashToken: data.celcashToken,
                 celcashPublicToken: data.celcashPublicToken

@@ -235,6 +235,7 @@ model Client {
   clientType    ClientType  @default(WALK_IN)
   totalSpent    Float       @default(0)
   isActive      Boolean     @default(true)
+  isDefaulter   Boolean     @default(false) // Indica se o cliente está inadimplente (pagamento de assinatua atrasado/falho)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

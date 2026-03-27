@@ -20,8 +20,13 @@ export async function POST(req: Request) {
 
     switch (eventType) {
       case "charge.statusSucessful":
-        // Exemplo: Atualizar a assinatura de um barbeiro/dono se o pagamento passou
+        // Exemplo: Atualizar se o pagamento passou -> Limpa Inadimplência
         await handleSuccessfulPayment(payload);
+        break;
+
+      case "charge.statusVetoed":
+        // Se a cobrança falhou -> Cliente Inadimplente
+        await handleFailedPayment(payload);
         break;
 
       case "subscription.created":
@@ -45,18 +50,45 @@ export async function POST(req: Request) {
 }
 
 async function handleSuccessfulPayment(payload: any) {
-  // A charge.statusSucessful geralmente contém as informações da transação
   const { Charge } = payload;
   if (!Charge) return;
 
-  console.log(`[CEL_CASH_WEBHOOK] Pagamento de R$ ${Charge.value} recebido com sucesso. ID: ${Charge.galaxPayId}`);
+  console.log(`[CEL_CASH_WEBHOOK] Pagamento recebido com sucesso. ID: ${Charge.galaxPayId}`);
   
-  // Aqui você buscaria a assinatura pelo transactionId ou customerId e atualizaria no Prisma
-  // Exemplo (pseudocódigo):
-  // await prisma.clientSubscription.updateMany({
-  //   where: { externalSubscriptionId: Charge.subscriptionId },
-  //   data: { status: "ACTIVE", renewedAt: new Date() }
-  // });
+  // Se você tiver o `customerId` vinculado ao CPF ou email do Client:
+  if (Charge.Customer && Charge.Customer.document) {
+    const cpf = Charge.Customer.document;
+    try {
+      await prisma.client.updateMany({
+        where: { cpf },
+        data: { isDefaulter: false }
+      });
+      console.log(`[CEL_CASH_WEBHOOK] Cliente CPF ${cpf} não está mais inadimplente.`);
+    } catch (e) {
+      console.error("[CEL_CASH_WEBHOOK] Erro ao atualizar status de inadimplência:", e);
+    }
+  }
+}
+
+async function handleFailedPayment(payload: any) {
+  const { Charge } = payload;
+  if (!Charge) return;
+
+  console.log(`[CEL_CASH_WEBHOOK] Pagamento RECUSADO. ID: ${Charge.galaxPayId}`);
+
+  // Atualizar cliente para INADIMPLENTE
+  if (Charge.Customer && Charge.Customer.document) {
+    const cpf = Charge.Customer.document;
+    try {
+      await prisma.client.updateMany({
+        where: { cpf },
+        data: { isDefaulter: true }
+      });
+      console.log(`[CEL_CASH_WEBHOOK] Cliente CPF ${cpf} agora está INADIMPLENTE.`);
+    } catch (e) {
+      console.error("[CEL_CASH_WEBHOOK] Erro ao marcar cliente como inadimplente:", e);
+    }
+  }
 }
 
 async function handleSubscriptionUpdate(payload: any) {

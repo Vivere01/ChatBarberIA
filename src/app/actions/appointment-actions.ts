@@ -92,6 +92,12 @@ export async function createAppointment(data: {
         }
         const clientId = (session.user as any).id;
 
+        // Verifica inadimplência
+        const client = await prisma.client.findUnique({ where: { id: clientId } });
+        if (client?.isDefaulter) {
+            throw new Error("Agendamento bloqueado: Consta uma pendência financeira em seu cadastro. Por favor, regularize com a recepção.");
+        }
+
         // Fetch services to calculate total
         const services = await prisma.service.findMany({
             where: { id: { in: data.serviceIds } }
@@ -141,7 +147,7 @@ export async function getAppointments(date: Date) {
                 }
             },
             include: {
-                client: { select: { id: true, name: true, phone: true } },
+                client: { select: { id: true, name: true, phone: true, isDefaulter: true } },
                 staff: { select: { id: true, name: true, avatarUrl: true } },
                 items: {
                     include: {

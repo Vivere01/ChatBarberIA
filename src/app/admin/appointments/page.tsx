@@ -183,7 +183,12 @@ export default function AppointmentsPage() {
                                                             'bg-brand-500/10 border-brand-500/20 shadow-[inset_0_0_20px_rgba(76,62,245,0.05)]'
                                                         }`}>
                                                             <div className="flex justify-between items-start mb-2">
-                                                                <h4 className="text-xs font-bold text-white truncate max-w-[80%]">{appt.client.name}</h4>
+                                                                <h4 className="text-xs font-bold text-white max-w-[80%] flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="truncate block max-w-full">{appt.client.name}</span>
+                                                                    {appt.client.isDefaulter && (
+                                                                        <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-sm uppercase font-black tracking-widest border border-red-500/10">Inadimplente</span>
+                                                                    )}
+                                                                </h4>
                                                                 <div className="relative">
                                                                     <button onClick={() => setOpenMenuId(openMenuId === appt.id ? null : appt.id)} className="p-1 text-zinc-600 hover:text-white transition-colors">
                                                                         <MoreVertical className="w-3.5 h-3.5" />

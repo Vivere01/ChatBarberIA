@@ -185,11 +185,18 @@ export default function ClientsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1 mb-4">
+                                    <div className="space-y-2 mb-4">
                                         <h3 className="text-lg font-bold font-display">{client.name}</h3>
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">
-                                            {client.clientType}
-                                        </span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">
+                                                {client.clientType}
+                                            </span>
+                                            {client.isDefaulter && (
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.1)]">
+                                                    Inadimplente
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2 mb-6 text-sm text-zinc-500">

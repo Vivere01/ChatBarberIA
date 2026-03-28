@@ -8,7 +8,7 @@ import {
     Scissors, LayoutDashboard, Users, UserCog, Wrench, Package,
     Calendar, BarChart3, DollarSign, TrendingDown, CreditCard,
     Trophy, Percent, Image, Megaphone, Star, Bot, Settings,
-    LogOut, ChevronLeft, ChevronRight, Store, BadgePercent, Gift
+    LogOut, ChevronLeft, ChevronRight, Store, BadgePercent, Gift, PiggyBank
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatbarberLogo } from "@/components/logo";
@@ -38,6 +38,7 @@ const navGroups = [
             { href: "/admin/costs", icon: TrendingDown, label: "Custos" },
             { href: "/admin/subscriptions", icon: CreditCard, label: "Assinaturas" },
             { href: "/admin/commissions", icon: Percent, label: "Comissões" },
+            { href: "/admin/financial/pot", icon: PiggyBank, label: "Pote de Comissões" },
         ],
     },
     {

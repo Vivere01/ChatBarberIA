@@ -168,12 +168,30 @@ export async function getAppointments(date: Date) {
 export async function updateAppointmentStatus(id: string, status: string) {
     try {
         const ownerId = await getEffectiveOwnerId();
+        // ─── LOGICA DO SISTEMA DE POTE (COMISSÃO POR ASSINATURA) ───
+        let potUpdateData = {};
+        if (status === 'COMPLETED') {
+            const currentApt = await prisma.appointment.findUnique({
+                where: { id },
+                include: { client: { include: { subscription: { include: { plan: true } } } } }
+            });
+
+            if (currentApt?.client?.subscription?.status === 'ACTIVE') {
+                const plan = currentApt.client.subscription.plan;
+                potUpdateData = {
+                    isSubscription: true,
+                    fichasCount: plan.chipsPerService || 1
+                };
+            }
+        }
+
         const appointment = await prisma.appointment.update({
             where: { id },
             data: {
                 status: status as any,
                 ...(status === 'COMPLETED' ? { completedAt: new Date() } : {}),
                 ...(status === 'CANCELLED' ? { cancelledAt: new Date() } : {}),
+                ...potUpdateData
             }
         });
         revalidatePath("/admin/appointments");

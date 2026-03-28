@@ -161,6 +161,7 @@ model Store {
   banners         Banner[]
   npsRatings      NpsRating[]
   waitlistEntries WaitlistEntry[]
+  potDistributions PotDistribution[]
 
   @@index([ownerId])
   @@map("stores")
@@ -371,6 +372,8 @@ model Appointment {
   notes           String?
   cancelledAt     DateTime?
   completedAt     DateTime?
+  isSubscription  Boolean           @default(false)
+  fichasCount     Int               @default(0)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -413,8 +416,10 @@ model SubscriptionPlan {
   name            String
   description     String?
   price           Float
-  billingCycleDay Int       @default(1)    // dia do mês para cobrar
-  intervalDays    Int       @default(30)   // ciclo em dias
+  potAmount       Float     @default(0)    // Valor da mensalidade que vai para o "pote"
+  chipsPerService Int       @default(1)    // Quantidade de fichas por atendimento
+  billingCycleDay Int       @default(1)
+  intervalDays    Int       @default(30)
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -603,6 +608,27 @@ model NpsRating {
   @@index([staffId])
   @@index([storeId])
   @@map("nps_ratings")
+}
+
+// ─────────────────────────────────────────────────────────────
+// POT DISTRIBUTIONS (Sistema de Pote)
+// ─────────────────────────────────────────────────────────────
+
+model PotDistribution {
+  id              String    @id @default(cuid())
+  storeId         String
+  month           Int       // 1-12
+  year            Int
+  totalPotAmount  Float     // Valor total no pote (soma do potAmount das assinaturas ativas)
+  totalFichas     Int       // Soma de todas as fichas geradas no mês
+  valuePerFicha   Float     // totalPotAmount / totalFichas
+  status          String    @default("PENDING") // PENDING, PAID
+  createdAt       DateTime  @default(now())
+
+  store           Store     @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, month, year])
+  @@map("pot_distributions")
 }
 
 // ─────────────────────────────────────────────────────────────

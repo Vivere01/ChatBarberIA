@@ -14,6 +14,7 @@ export async function getGatewaySettings() {
         const owner = await prisma.owner.findUnique({
             where: { id: (session.user as any).id },
             select: {
+                id: true,
                 celcashToken: true,
                 celcashPublicToken: true
             }

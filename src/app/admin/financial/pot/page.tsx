@@ -35,7 +35,7 @@ export default function PotPage() {
             alert("Pote distribuído com sucesso!");
             loadData();
         } else {
-            alert(res.error);
+            alert((res as any).error || "Erro desconhecido");
         }
         setDistributing(false);
     };

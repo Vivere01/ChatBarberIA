@@ -235,6 +235,7 @@ export async function updateAdminAppointment(id: string, data: {
         const updateData: any = {};
         if (data.status) updateData.status = data.status;
         if (data.staffId) updateData.staffId = data.staffId;
+        if (data.scheduledAt) updateData.scheduledAt = data.scheduledAt;
         
         if (data.time && data.date) {
             const [hours, minutes] = data.time.split(':').map(Number);

@@ -176,7 +176,7 @@ export default function AppointmentsPage() {
                         <div className="w-20" />
                         <div className="flex-1 flex overflow-x-auto scrollbar-hide py-4 lg:snap-none snap-x snap-mandatory">
                             {staff.map((member) => (
-                                <div key={member.id} className="min-w-[85vw] md:min-w-[240px] flex-1 flex flex-col items-center border-r border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors snap-center">
+                                <div key={member.id} className="min-w-[85vw] sm:min-w-[200px] xl:min-w-0 xl:flex-1 flex flex-col items-center border-r border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors snap-center">
                                     <div className="w-12 h-12 rounded-2xl bg-dark-800 border-2 border-white/5 overflow-hidden mb-2 shadow-xl"><img src={member.avatarUrl || `https://ui-avatars.com/api/?name=${member.name}`} className="w-full h-full object-cover" /></div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{member.name}</span>
                                 </div>
@@ -193,11 +193,34 @@ export default function AppointmentsPage() {
                             </div>
                             <div className="flex-1 flex overflow-x-auto scrollbar-hide relative min-w-max lg:snap-none snap-x snap-mandatory">
                                 {staff.map((member) => (
-                                    <div key={member.id} className="min-w-[85vw] md:min-w-[240px] flex-1 border-r border-white/5 last:border-0 relative snap-center">
+                                    <div key={member.id} className="min-w-[85vw] sm:min-w-[200px] xl:min-w-0 xl:flex-1 border-r border-white/5 last:border-0 relative snap-center">
                                         {timeSlots.map(hour => (
                                             <div key={hour} className="h-[100px] border-b border-white/[0.03] relative">
                                                 {[0, 15, 30, 45].map(m => (
-                                                    <div key={m} onClick={() => { setFormData({ clientId: "", staffId: member.id, serviceIds: [], time: `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`, date: selectedDate }); setIsModalOpen(true); }} className="h-1/4 w-full cursor-pointer hover:bg-brand-500/[0.03] transition-colors" />
+                                                    <div 
+                                                        key={m} 
+                                                        onClick={() => { setFormData({ clientId: "", staffId: member.id, serviceIds: [], time: `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`, date: selectedDate }); setIsModalOpen(true); }} 
+                                                        onDragOver={(e) => e.preventDefault()}
+                                                        onDrop={async (e) => {
+                                                            e.preventDefault();
+                                                            const aptId = e.dataTransfer.getData("appointmentId");
+                                                            if (!aptId) return;
+                                                            
+                                                            const targetTime = `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                                                            const [h, mm] = targetTime.split(':').map(Number);
+                                                            const newDate = new Date(selectedDate);
+                                                            newDate.setHours(h, mm, 0, 0);
+
+                                                            setLoading(true);
+                                                            await updateAdminAppointment(aptId, {
+                                                                staffId: member.id,
+                                                                scheduledAt: newDate
+                                                            });
+                                                            await loadData();
+                                                            setLoading(false);
+                                                        }}
+                                                        className="h-1/4 w-full cursor-pointer hover:bg-brand-500/[0.03] transition-colors" 
+                                                    />
                                                 ))}
                                             </div>
                                         ))}
@@ -208,7 +231,12 @@ export default function AppointmentsPage() {
                                             return (
                                                 <div 
                                                     key={apt.id}
-                                                    className="absolute left-3 right-3 rounded-2xl border-2 p-3.5 cursor-pointer transition-all hover:scale-[1.02] hover:z-50 flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl group"
+                                                    draggable="true"
+                                                    onDragStart={(e) => {
+                                                        e.dataTransfer.setData("appointmentId", apt.id);
+                                                        e.dataTransfer.effectAllowed = "move";
+                                                    }}
+                                                    className="absolute left-3 right-3 rounded-2xl border-2 p-3.5 cursor-move transition-all hover:scale-[1.01] hover:z-50 flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl group"
                                                     style={{ top: `${top}px`, height: `${height}px`, backgroundColor: sColor + '15', borderColor: sColor + '40', color: sColor }}
                                                     onClick={() => openEdit(apt)}
                                                 >

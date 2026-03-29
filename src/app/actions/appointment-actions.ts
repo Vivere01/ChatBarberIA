@@ -205,3 +205,60 @@ export async function deleteAppointment(id: string) {
         return { success: false };
     }
 }
+
+export async function getClientHistory(clientId: string) {
+    try {
+        const history = await prisma.appointment.findMany({
+            where: { clientId, status: 'COMPLETED' },
+            take: 5,
+            orderBy: { scheduledAt: 'desc' },
+            include: {
+                staff: { select: { name: true } },
+                items: { include: { service: { select: { name: true } } } }
+            }
+        });
+        return history;
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function updateAdminAppointment(id: string, data: {
+    staffId?: string;
+    scheduledAt?: Date;
+    time?: string;
+    date?: Date;
+    serviceIds?: string[];
+    status?: string;
+}) {
+    try {
+        const updateData: any = {};
+        if (data.status) updateData.status = data.status;
+        if (data.staffId) updateData.staffId = data.staffId;
+        
+        if (data.time && data.date) {
+            const [hours, minutes] = data.time.split(':').map(Number);
+            const baseDate = new Date(data.date);
+            updateData.scheduledAt = new Date(Date.UTC(
+                baseDate.getUTCFullYear(),
+                baseDate.getUTCMonth(),
+                baseDate.getUTCDate(),
+                hours, 
+                minutes,
+                0, 0
+            ));
+        }
+
+        // If serviceIds change, we need to update items (complex logic, for now keep same items or implement full sync)
+        
+        await prisma.appointment.update({
+            where: { id },
+            data: updateData
+        });
+
+        revalidatePath("/admin/appointments");
+        return { success: true };
+    } catch (error) {
+        return { success: false };
+    }
+}

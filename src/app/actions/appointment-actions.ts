@@ -30,7 +30,7 @@ export async function getClientAppointments(storeId: string) {
 export async function createAppointment(data: {
     storeId: string;
     staffId: string;
-    serviceId: string;
+    serviceIds: string[]; // Upgrade to support combos/multiple services
     scheduledAt: Date;
 }) {
     try {
@@ -41,8 +41,14 @@ export async function createAppointment(data: {
         }
         const clientId = (session.user as any).id;
 
-        const service = await prisma.service.findUnique({ where: { id: data.serviceId } });
-        if (!service) return { error: "Serviço não encontrado." };
+        const services = await prisma.service.findMany({ 
+            where: { id: { in: data.serviceIds } } 
+        });
+        
+        if (services.length === 0) return { error: "Nenhum serviço selecionado." };
+
+        const totalDuration = services.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+        const totalAmount = services.reduce((acc, s) => acc + s.price, 0);
 
         const appointment = await prisma.appointment.create({
             data: {
@@ -50,16 +56,16 @@ export async function createAppointment(data: {
                 clientId,
                 staffId: data.staffId,
                 scheduledAt: data.scheduledAt,
-                durationMinutes: service.durationMinutes,
-                totalAmount: service.price,
+                durationMinutes: totalDuration,
+                totalAmount: totalAmount,
                 status: "SCHEDULED",
                 items: {
-                    create: [{
-                        serviceId: service.id,
+                    create: services.map(s => ({
+                        serviceId: s.id,
                         quantity: 1,
-                        unitPrice: service.price,
-                        totalPrice: service.price,
-                    }]
+                        unitPrice: s.price,
+                        totalPrice: s.price,
+                    }))
                 }
             }
         });

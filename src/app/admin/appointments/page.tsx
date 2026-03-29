@@ -285,62 +285,62 @@ export default function AppointmentsPage() {
 
             {/* MODAL REDESENHADO: RESPONSIVO E UI/UX PREMIUM */}
             <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Editar Agendamento" : "Novo Agendamento"}>
-                <div className="w-full max-w-5xl mx-auto space-y-10 py-4">
+                <div className="w-full max-w-6xl mx-auto space-y-10 py-6">
                     
                     {/* LINHA 1: CLIENTE E PROFISSIONAL */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <Section label="CLIENTE">
-                            <div className="flex gap-3">
+                            <div className="flex gap-4">
                                 <select required value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="custom-input flex-1">
                                     <option value="">Selecione o Cliente</option>
                                     {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
-                                <button type="button" className="h-[60px] w-14 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20">
-                                    <UserPlus className="w-5 h-5" />
+                                <button type="button" className="h-[60px] w-16 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20 shadow-lg">
+                                    <UserPlus className="w-6 h-6" />
                                 </button>
                             </div>
                         </Section>
                         <Section label="PROFISSIONAL">
-                            <div className="flex gap-3">
+                            <div className="flex gap-4">
                                 <select required value={formData.staffId} onChange={(e) => setFormData({ ...formData, staffId: e.target.value })} className="custom-input flex-1">
                                     <option value="">Selecione Profissional</option>
                                     {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
-                                <div className="h-[60px] w-14 bg-dark-800 border border-white/5 rounded-2xl flex items-center justify-center">
-                                    <User className="w-5 h-5 text-zinc-500" />
+                                <div className="h-[60px] w-16 bg-dark-800 border border-white/5 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <User className="w-6 h-6 text-zinc-500" />
                                 </div>
                             </div>
                         </Section>
                     </div>
 
-                    {/* LINHA 2: TEMPO E FILIAL */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* LINHA 2: TEMPO E FILIAL - ALINHAMENTO CORRIGIDO */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                         <Section label="DATA">
                              <div className="relative">
-                                <input type="date" value={format(formData.date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value + "T12:00:00") })} className="custom-input" />
-                                <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                <input type="date" value={format(formData.date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value + "T12:00:00") })} className="custom-input !px-6" />
+                                <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
                             </div>
                         </Section>
-                        <Section label="INÍCIO">
+                        <Section label="HORA INÍCIO">
                             <div className="relative">
-                                <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input" />
-                                <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input !px-6" />
+                                <Clock className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
                             </div>
                         </Section>
-                        <Section label="FIM (ESTIMADO)">
+                        <Section label="FIM ESTIMADO">
                             <div className="relative">
                                 {(() => {
                                     const [h, m] = formData.time.split(':').map(Number);
                                     const totalDur = services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.durationMinutes, 0);
                                     const end = new Date();
                                     end.setHours(h, m + (totalDur || 30), 0, 0);
-                                    return <input type="time" readOnly value={`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`} className="custom-input bg-dark-900 border-dashed opacity-50 cursor-not-allowed" />;
+                                    return <input type="time" readOnly value={`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`} className="custom-input bg-dark-900 border-dashed opacity-50 cursor-not-allowed !px-6" />;
                                 })()}
-                                <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                <Clock className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
                             </div>
                         </Section>
                         <Section label="LOJA/FILIAL">
-                            <select className="custom-input cursor-not-allowed opacity-50" disabled>
+                            <select className="custom-input cursor-not-allowed opacity-50 !px-6" disabled>
                                 <option>ChatBarber Matriz</option>
                             </select>
                         </Section>

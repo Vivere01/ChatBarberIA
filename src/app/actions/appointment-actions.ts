@@ -5,27 +5,7 @@ import { getEffectiveStoreId, getEffectiveOwnerId } from "./shared";
 import { revalidatePath } from "next/cache";
 import { startOfDay, endOfDay } from "date-fns";
 
-// ─── CLIENT PORTAL ACTIONS ───────────────────────────────────────
-
-export async function getClientAppointments(storeId: string) {
-    try {
-        const { getAuthSession } = await import("@/lib/auth");
-        const session = await getAuthSession();
-        if (!session?.user || (session.user as any).role !== "CLIENT") return [];
-        const clientId = (session.user as any).id;
-        return await prisma.appointment.findMany({
-            where: { clientId, storeId },
-            include: {
-                staff: { select: { name: true, avatarUrl: true } },
-                items: { include: { service: { select: { name: true, price: true } } } }
-            },
-            orderBy: { scheduledAt: 'desc' }
-        });
-    } catch (error) {
-        console.error("Error fetching client appointments:", error);
-        return [];
-    }
-}
+// ─── ADMIN APPOINTMENT ACTIONS ───────────────────────────────────────
 
 export async function createAdminAppointment(data: {
     clientId: string;
@@ -38,10 +18,19 @@ export async function createAdminAppointment(data: {
         const ownerId = await getEffectiveOwnerId();
         const storeId = await getEffectiveStoreId();
 
-        // Build scheduledAt from date + time string
+        // 🛡️ TIMEZONE SHIELD: Salva a hora "seca" (sem offset) para evitar o erro de sumiço.
+        // O Banco salva em UTC, então mandamos a hora selecionada como se fosse UTC.
         const [hours, minutes] = data.time.split(':').map(Number);
-        const scheduledAt = new Date(data.date);
-        scheduledAt.setHours(hours, minutes, 0, 0);
+        const baseDate = new Date(data.date);
+        
+        const scheduledAt = new Date(Date.UTC(
+            baseDate.getUTCFullYear(),
+            baseDate.getUTCMonth(),
+            baseDate.getUTCDate(),
+            hours, // Grava "9" horas exatamente no UTC
+            minutes,
+            0, 0
+        ));
 
         // Fetch services for price & duration
         const services = await prisma.service.findMany({
@@ -56,7 +45,7 @@ export async function createAdminAppointment(data: {
                 storeId,
                 clientId: data.clientId,
                 staffId: data.staffId,
-                scheduledAt,
+                scheduledAt, // Agora salvo de forma absoluta (09:00Z para 09:00)
                 durationMinutes: totalDuration || 30,
                 totalAmount: totalAmount,
                 status: "SCHEDULED",
@@ -79,72 +68,22 @@ export async function createAdminAppointment(data: {
     }
 }
 
-export async function createAppointment(data: {
-    storeId: string;
-    staffId: string;
-    scheduledAt: Date;
-    serviceIds: string[];
-}) {
-    try {
-        const { getAuthSession } = await import("@/lib/auth");
-        const session = await getAuthSession();
-        if (!session?.user || (session.user as any).role !== "CLIENT") {
-             throw new Error("Apenas clientes logados podem agendar.");
-        }
-        const clientId = (session.user as any).id;
-
-        // Verifica inadimplência
-        const client = await prisma.client.findUnique({ where: { id: clientId } });
-        if (client?.isDefaulter) {
-            throw new Error("Agendamento bloqueado: Consta uma pendência financeira em seu cadastro. Por favor, regularize com a recepção.");
-        }
-
-        // Fetch services to calculate total
-        const services = await prisma.service.findMany({
-            where: { id: { in: data.serviceIds } }
-        });
-
-        const totalAmount = services.reduce((sum, s) => sum + s.price, 0);
-        const totalDuration = services.reduce((sum, s) => sum + s.durationMinutes, 0);
-
-        const appointment = await prisma.appointment.create({
-            data: {
-                storeId: data.storeId,
-                clientId,
-                staffId: data.staffId,
-                scheduledAt: data.scheduledAt,
-                durationMinutes: totalDuration,
-                totalAmount,
-                status: "SCHEDULED",
-                items: {
-                    create: services.map(s => ({
-                        serviceId: s.id,
-                        quantity: 1,
-                        unitPrice: s.price,
-                        totalPrice: s.price
-                    }))
-                }
-            }
-        });
-
-        revalidatePath("/admin/appointments");
-        return { success: true, appointment };
-    } catch (error: any) {
-        console.error("Error creating client appointment:", error);
-        return { success: false, error: error.message };
-    }
-}
-
 export async function getAppointments(date: Date) {
     try {
         const ownerId = await getEffectiveOwnerId();
+        
+        // Usar UTC day boundaries para o filtro
+        const start = new Date(date);
+        start.setUTCHours(0,0,0,0);
+        const end = new Date(date);
+        end.setUTCHours(23,59,59,999);
 
         const appointments = await prisma.appointment.findMany({
             where: {
                 store: { ownerId },
                 scheduledAt: {
-                    gte: startOfDay(date),
-                    lte: endOfDay(date),
+                    gte: start,
+                    lte: end,
                 }
             },
             include: {
@@ -168,7 +107,7 @@ export async function getAppointments(date: Date) {
         });
 
         return appointments;
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error fetching appointments:", error);
         return [];
     }
@@ -176,38 +115,14 @@ export async function getAppointments(date: Date) {
 
 export async function updateAppointmentStatus(id: string, status: string) {
     try {
-        const ownerId = await getEffectiveOwnerId();
-        // ─── LOGICA DO SISTEMA DE POTE (COMISSÃO POR ASSINATURA) ───
-        let potUpdateData = {};
-        if (status === 'COMPLETED') {
-            const currentApt = await prisma.appointment.findUnique({
-                where: { id },
-                include: { client: { include: { subscription: { include: { plan: true } } } } }
-            });
-
-            if (currentApt?.client?.subscription?.status === 'ACTIVE') {
-                const plan = currentApt.client.subscription.plan;
-                potUpdateData = {
-                    isSubscription: true,
-                    fichasCount: plan.chipsPerService || 1
-                };
-            }
-        }
-
-        const appointment = await prisma.appointment.update({
+        await prisma.appointment.update({
             where: { id },
-            data: {
-                status: status as any,
-                ...(status === 'COMPLETED' ? { completedAt: new Date() } : {}),
-                ...(status === 'CANCELLED' ? { cancelledAt: new Date() } : {}),
-                ...potUpdateData
-            }
+            data: { status: status as any }
         });
         revalidatePath("/admin/appointments");
-        return { success: true, appointment };
-    } catch (error: any) {
-        console.error("Error updating appointment status:", error);
-        return { success: false, error: error.message };
+        return { success: true };
+    } catch (error) {
+        return { success: false };
     }
 }
 
@@ -216,8 +131,7 @@ export async function deleteAppointment(id: string) {
         await prisma.appointment.delete({ where: { id } });
         revalidatePath("/admin/appointments");
         return { success: true };
-    } catch (error: any) {
-        console.error("Error deleting appointment:", error);
-        return { success: false, error: error.message };
+    } catch (error) {
+        return { success: false };
     }
 }

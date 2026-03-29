@@ -284,150 +284,174 @@ export default function AppointmentsPage() {
             </div>
 
             {/* MODAL REDESENHADO: RESPONSIVO E UI/UX PREMIUM */}
-            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Gerenciar Agendamento" : "Novo Agendamento"}>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 min-h-[500px] w-full max-w-5xl mx-auto overflow-hidden">
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Editar Agendamento" : "Novo Agendamento"}>
+                <div className="w-full max-w-5xl mx-auto space-y-10 py-4">
                     
-                    {/* COLUNA ESQUERDA: FORMULÁRIO (8 colunas) */}
-                    <div className="lg:col-span-12 xl:col-span-7 space-y-8 flex flex-col justify-between h-full">
-                        <div className="space-y-6">
-                            <Section label="CLIENTE">
-                                <div className="flex gap-3">
-                                    <select required value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="custom-input flex-1">
-                                        <option value="">Selecione o Cliente</option>
-                                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                    <button type="button" className="h-[60px] w-[60px] bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all shadow-sm border border-brand-500/10">
-                                        <UserPlus className="w-6 h-6" />
-                                    </button>
-                                </div>
-                            </Section>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <Section label="PROFISSIONAL">
-                                    <select required value={formData.staffId} onChange={(e) => setFormData({ ...formData, staffId: e.target.value })} className="custom-input">
-                                        <option value="">Selecione Profissional</option>
-                                        {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
-                                </Section>
-                                <Section label="HORA DE INÍCIO">
-                                    <div className="relative">
-                                        <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input !pr-10" />
-                                        <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
-                                    </div>
-                                </Section>
-                            </div>
-
-                            <Section label="ESCOLHA OS SERVIÇOS">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[180px] overflow-y-auto scrollbar-hide pr-1">
-                                    {services.map(s => (
-                                        <button 
-                                            key={s.id} 
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, serviceIds: prev.serviceIds.includes(s.id) ? prev.serviceIds.filter(id => id !== s.id) : [...prev.serviceIds, s.id] }))}
-                                            className={cn("p-4 rounded-2xl border-2 text-left transition-all relative group", formData.serviceIds.includes(s.id) ? "bg-brand-500/10 border-brand-500 shadow-brand-inner" : "bg-dark-800 border-white/5 opacity-60 hover:opacity-100")}
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-[11px] font-black uppercase tracking-wider text-white">{s.name}</p>
-                                                {formData.serviceIds.includes(s.id) && <CheckCircle className="w-4 h-4 text-brand-500" />}
-                                            </div>
-                                            <p className="text-[10px] font-bold text-zinc-500 mt-1">R$ {s.price} • {s.durationMinutes}m</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </Section>
-                        </div>
-
-                        {/* AÇÕES DE RODAPÉ */}
-                        <div className="pt-8 border-t border-white/5 flex flex-col gap-4">
-                            {editingAptId && (
-                                <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-2 transition-all overflow-hidden", showOptions ? "max-h-40 opacity-100" : "max-h-0 opacity-0")}>
-                                    <QuickAction label="FINALIZAR" icon={CheckCircle} color="emerald" onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData)} />
-                                    <QuickAction label="FALTOU" icon={XCircle} color="orange" onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData)} />
-                                    <QuickAction label="WHATSAPP" icon={MessageCircle} color="blue" onClick={() => {}} />
-                                    <QuickAction label="EXCLUIR" icon={Trash2} color="red" onClick={() => deleteAppointment(editingAptId).then(loadData)} />
-                                </div>
-                            )}
-                            
-                            <div className="flex gap-4">
-                                {editingAptId && (
-                                    <button type="button" onClick={() => setShowOptions(!showOptions)} className="h-[60px] px-6 bg-dark-800 border border-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2">
-                                        {showOptions ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
-                                        {showOptions ? "FECHAR" : "OPÇÕES"}
-                                    </button>
-                                )}
-                                <button type="submit" disabled={loading} onClick={handleSave} className="flex-1 h-[60px] bg-brand-gradient text-white rounded-2xl font-black uppercase text-[11px] tracking-[3px] shadow-brand hover:scale-[1.01] active:scale-95 transition-all">
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingAptId ? "SALVAR ALTERAÇÕES" : "CONFIRMAR RESERVA")}
+                    {/* LINHA 1: CLIENTE E PROFISSIONAL */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Section label="CLIENTE">
+                            <div className="flex gap-3">
+                                <select required value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="custom-input flex-1">
+                                    <option value="">Selecione o Cliente</option>
+                                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                                <button type="button" className="h-[60px] w-14 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20">
+                                    <UserPlus className="w-5 h-5" />
                                 </button>
                             </div>
-                        </div>
+                        </Section>
+                        <Section label="PROFISSIONAL">
+                            <div className="flex gap-3">
+                                <select required value={formData.staffId} onChange={(e) => setFormData({ ...formData, staffId: e.target.value })} className="custom-input flex-1">
+                                    <option value="">Selecione Profissional</option>
+                                    {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                                <div className="h-[60px] w-14 bg-dark-800 border border-white/5 rounded-2xl flex items-center justify-center">
+                                    <User className="w-5 h-5 text-zinc-500" />
+                                </div>
+                            </div>
+                        </Section>
                     </div>
 
-                    {/* COLUNA DIREITA: DOSSIÊ (5 colunas) */}
-                    <div className="lg:col-span-12 xl:col-span-5 flex flex-col h-full bg-dark-950/40 rounded-[32px] p-8 border border-white/5 relative overflow-hidden group/dossie">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 blur-[80px] -mr-16 -mt-16 rounded-full group-hover/dossie:bg-brand-500/20 transition-all" />
-                        
-                        <div className="relative z-10 flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-dark-900 rounded-2xl flex items-center justify-center shadow-lg border border-white/5">
-                                <History className="w-6 h-6 text-brand-400" />
+                    {/* LINHA 2: TEMPO E FILIAL */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        <Section label="DATA">
+                             <div className="relative">
+                                <input type="date" value={format(formData.date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value + "T12:00:00") })} className="custom-input" />
+                                <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
                             </div>
-                            <div>
-                                <h3 className="text-sm font-black uppercase tracking-widest text-white">Dossiê do Cliente</h3>
-                                <p className="text-[10px] font-bold text-zinc-500 uppercase mt-0.5">Visão analítica do histórico</p>
+                        </Section>
+                        <Section label="INÍCIO">
+                            <div className="relative">
+                                <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input" />
+                                <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
                             </div>
-                        </div>
-                        
-                        <div className="flex-1 space-y-8 relative z-10">
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-6 h-px bg-zinc-800" /> ÚLTIMO AGENDAMENTO
-                                </h4>
-                                {clientHistory.length > 0 ? (
-                                    <div className="p-5 bg-dark-900/60 rounded-[28px] border border-white/5 space-y-4 shadow-inner">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                                                <span className="text-xs font-black text-zinc-300 tabular-nums">{format(new Date(clientHistory[0].scheduledAt), "dd/MM/yyyy")}</span>
-                                            </div>
-                                            <span className="text-[10px] font-black text-brand-500 uppercase tracking-widest px-3 py-1 bg-brand-500/5 rounded-full">{clientHistory[0].staff.name}</span>
-                                        </div>
-                                        <div className="flex items-start gap-3">
-                                            <Scissors className="w-3.5 h-3.5 text-zinc-600 mt-1" />
-                                            <p className="text-xs text-zinc-400 leading-relaxed font-bold">
-                                                {clientHistory[0].items.map((i: any) => i.service.name).join(", ")}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="py-12 flex flex-col items-center justify-center bg-dark-800/20 rounded-[28px] border border-dashed border-white/10 opacity-30">
-                                        <Info className="w-8 h-8 mb-3 text-zinc-700" />
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-zinc-600">Nenhum registro prévio</p>
-                                    </div>
-                                )}
+                        </Section>
+                        <Section label="FIM (ESTIMADO)">
+                            <div className="relative">
+                                {(() => {
+                                    const [h, m] = formData.time.split(':').map(Number);
+                                    const totalDur = services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.durationMinutes, 0);
+                                    const end = new Date();
+                                    end.setHours(h, m + (totalDur || 30), 0, 0);
+                                    return <input type="time" readOnly value={`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`} className="custom-input bg-dark-900 border-dashed opacity-50 cursor-not-allowed" />;
+                                })()}
+                                <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
                             </div>
+                        </Section>
+                        <Section label="LOJA/FILIAL">
+                            <select className="custom-input cursor-not-allowed opacity-50" disabled>
+                                <option>ChatBarber Matriz</option>
+                            </select>
+                        </Section>
+                    </div>
 
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-6 h-px bg-zinc-800" /> ITENS RECORRENTES
-                                </h4>
-                                {clientHistory.length > 1 ? (
-                                    <div className="space-y-2">
-                                        {clientHistory.slice(1, 4).map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-4 p-4 bg-dark-800/40 rounded-2xl border border-white/5 hover:bg-dark-800 transition-all group/item">
-                                                <div className="w-9 h-9 rounded-xl bg-dark-900 border border-white/10 flex items-center justify-center text-[11px] font-black text-brand-400 group-hover/item:scale-110 transition-transform">{idx + 1}</div>
-                                                <div className="flex-1">
-                                                    <span className="text-[11px] font-black text-zinc-300 uppercase tracking-wider block">{item.items[0]?.service.name}</span>
-                                                    <span className="text-[9px] font-bold text-zinc-600 uppercase mt-0.5 block">{format(new Date(item.scheduledAt), "MMMM/yyyy", { locale: ptBR })}</span>
-                                                </div>
-                                                <ArrowRight className="w-4 h-4 text-zinc-800 group-hover/item:text-brand-500 transition-colors" />
-                                            </div>
+                    {/* SERVIÇOS SELECIONADOS (MODELO RECEITA/COMANDA) */}
+                    <Section label="SERVIÇOS E ITENS DA COMANDA">
+                        <div className="bg-dark-950/40 rounded-[32px] border border-white/5 overflow-hidden">
+                            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                                <div className="flex gap-4 items-center flex-1 max-w-md">
+                                    <select 
+                                        className="h-12 bg-dark-800 border border-white/10 rounded-xl px-4 text-xs font-bold text-zinc-300 flex-1 outline-none focus:border-brand-500"
+                                        onChange={(e) => {
+                                            const id = e.target.value;
+                                            if (id && !formData.serviceIds.includes(id)) {
+                                                setFormData(prev => ({ ...prev, serviceIds: [...prev.serviceIds, id] }));
+                                            }
+                                            e.target.value = "";
+                                        }}
+                                    >
+                                        <option value="">Adicionar novo serviço...</option>
+                                        {services.map(s => <option key={s.id} value={s.id}>{s.name} • R$ {s.price}</option>)}
+                                    </select>
+                                    <button type="button" className="w-12 h-12 bg-brand-500 text-white rounded-xl flex items-center justify-center hover:scale-105 transition-all"><Plus className="w-5 h-5" /></button>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Total da Comanda</p>
+                                    <p className="text-xl font-black text-white">R$ {services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + Number(s.price), 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <table className="w-full text-left">
+                                <thead className="bg-white/5 border-b border-white/5">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Serviço/Produto</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Valor</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Duração</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.02]">
+                                    {formData.serviceIds.length === 0 ? (
+                                        <tr><td colSpan={4} className="px-6 py-10 text-center text-xs font-bold text-zinc-600 italic">Nenhum serviço adicionado à comanda.</td></tr>
+                                    ) : (
+                                        services.filter(s => formData.serviceIds.includes(s.id)).map(s => (
+                                            <tr key={s.id} className="hover:bg-white/[0.01] transition-colors">
+                                                <td className="px-6 py-4 text-xs font-black text-white uppercase tracking-wider">{s.name}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 text-center">R$ {s.price}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 text-center">{s.durationMinutes} min</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button onClick={() => setFormData(prev => ({ ...prev, serviceIds: prev.serviceIds.filter(id => id !== s.id) }))} className="p-2 text-zinc-600 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Section>
+
+                    {/* HISTÓRICO (MODELO TABELA ÚLTIMOS AGENDAMENTOS) */}
+                    {clientHistory.length > 0 && (
+                        <Section label="ÚLTIMOS 3 AGENDAMENTOS DO CLIENTE">
+                             <div className="bg-dark-900/40 rounded-[28px] border border-white/5 overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-white/[0.02] border-b border-white/5">
+                                        <tr>
+                                            <th className="px-6 py-3 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Data</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Serviços</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Barbeiro</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/[0.02]">
+                                        {clientHistory.slice(0, 3).map((hist, i) => (
+                                            <tr key={i} className="opacity-60 hover:opacity-100 transition-opacity">
+                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 tabular-nums">{format(new Date(hist.scheduledAt), "dd/MM/yyyy HH:mm")}</td>
+                                                <td className="px-6 py-4 text-xs font-medium text-zinc-500 truncate max-w-[200px]">{hist.items.map((it: any) => it.service.name).join(", ")}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-zinc-300 uppercase tracking-tight">{hist.staff.name}</td>
+                                            </tr>
                                         ))}
-                                    </div>
-                                ) : (
-                                    <div className="p-8 text-center text-zinc-700 text-[10px] font-black uppercase border border-dashed border-white/5 rounded-[28px]">Aguardando dados...</div>
-                                )}
+                                    </tbody>
+                                </table>
                             </div>
+                        </Section>
+                    )}
+
+                    {/* AÇÕES DE RODAPÉ (REMODELADAS) */}
+                    <div className="pt-8 border-t border-white/5 flex flex-wrap items-center justify-between gap-4">
+                        <button type="button" onClick={() => { setIsModalOpen(false); setEditingAptId(null); }} className="px-8 h-[60px] text-[10px] font-black uppercase tracking-[2px] text-zinc-500 hover:text-white transition-all">Cancelar</button>
+                        
+                        <div className="flex gap-4">
+                            {editingAptId && (
+                                <button type="button" onClick={() => setShowOptions(!showOptions)} className={cn("h-[60px] px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3", showOptions ? "bg-red-500 text-white" : "bg-dark-800 text-zinc-400 border border-white/5 hover:text-white")}>
+                                    {showOptions ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
+                                    {showOptions ? "FECHAR OPÇÕES" : "MAIS AÇÕES"}
+                                </button>
+                            )}
+                            <button type="submit" disabled={loading} onClick={handleSave} className="px-10 h-[60px] bg-brand-gradient text-white rounded-2xl font-black uppercase text-[11px] tracking-[3px] shadow-brand hover:scale-[1.02] active:scale-95 transition-all min-w-[200px]">
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingAptId ? "SALVAR ALTERAÇÕES" : "CONFIRMAR RESERVA")}
+                            </button>
                         </div>
                     </div>
+
+                    {/* MENU DE OPÇÕES COMPLEMENTARES (ESTILO FLOATING) */}
+                    {editingAptId && showOptions && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 bg-dark-950/80 backdrop-blur-xl border border-white/10 rounded-[32px] animate-in slide-in-from-bottom-4 duration-300">
+                            <QuickAction label="FINALIZAR" icon={CheckCircle} color="emerald" onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData).then(() => setIsModalOpen(false))} />
+                            <QuickAction label="FALTOU" icon={XCircle} color="orange" onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData).then(() => setIsModalOpen(false))} />
+                            <QuickAction label="WHATSAPP" icon={MessageCircle} color="blue" onClick={() => {}} />
+                            <QuickAction label="EXCLUIR" icon={Trash2} color="red" onClick={() => deleteAppointment(editingAptId).then(loadData).then(() => setIsModalOpen(false))} />
+                        </div>
+                    )}
                 </div>
             </Modal>
 

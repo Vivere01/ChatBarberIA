@@ -5,6 +5,73 @@ import { getEffectiveStoreId, getEffectiveOwnerId } from "./shared";
 import { revalidatePath } from "next/cache";
 import { startOfDay, endOfDay } from "date-fns";
 
+// ─── CLIENT PORTAL ACTIONS (RESTAURADAS) ───────────────────────────
+
+export async function getClientAppointments(storeId: string) {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== "CLIENT") return [];
+        const clientId = (session.user as any).id;
+        return await prisma.appointment.findMany({
+            where: { clientId, storeId },
+            include: {
+                staff: { select: { name: true, avatarUrl: true } },
+                items: { include: { service: { select: { name: true, price: true } } } }
+            },
+            orderBy: { scheduledAt: 'desc' }
+        });
+    } catch (error) {
+        console.error("Error fetching client appointments:", error);
+        return [];
+    }
+}
+
+export async function createAppointment(data: {
+    storeId: string;
+    staffId: string;
+    serviceId: string;
+    scheduledAt: Date;
+}) {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== "CLIENT") {
+            return { error: "Você precisa estar logado como cliente." };
+        }
+        const clientId = (session.user as any).id;
+
+        const service = await prisma.service.findUnique({ where: { id: data.serviceId } });
+        if (!service) return { error: "Serviço não encontrado." };
+
+        const appointment = await prisma.appointment.create({
+            data: {
+                storeId: data.storeId,
+                clientId,
+                staffId: data.staffId,
+                scheduledAt: data.scheduledAt,
+                durationMinutes: service.durationMinutes,
+                totalAmount: service.price,
+                status: "SCHEDULED",
+                items: {
+                    create: [{
+                        serviceId: service.id,
+                        quantity: 1,
+                        unitPrice: service.price,
+                        totalPrice: service.price,
+                    }]
+                }
+            }
+        });
+
+        revalidatePath("/booking/[storeId]/agendamentos", "page");
+        return { success: true, appointment };
+    } catch (error: any) {
+        console.error("Error creating appointment:", error);
+        return { error: "Erro ao realizar agendamento." };
+    }
+}
+
 // ─── ADMIN APPOINTMENT ACTIONS ───────────────────────────────────────
 
 export async function createAdminAppointment(data: {
@@ -18,21 +85,19 @@ export async function createAdminAppointment(data: {
         const ownerId = await getEffectiveOwnerId();
         const storeId = await getEffectiveStoreId();
 
-        // 🛡️ TIMEZONE SHIELD: Salva a hora "seca" (sem offset) para evitar o erro de sumiço.
-        // O Banco salva em UTC, então mandamos a hora selecionada como se fosse UTC.
         const [hours, minutes] = data.time.split(':').map(Number);
         const baseDate = new Date(data.date);
         
+        // Mantendo o Timezone Shield
         const scheduledAt = new Date(Date.UTC(
             baseDate.getUTCFullYear(),
             baseDate.getUTCMonth(),
             baseDate.getUTCDate(),
-            hours, // Grava "9" horas exatamente no UTC
+            hours, 
             minutes,
             0, 0
         ));
 
-        // Fetch services for price & duration
         const services = await prisma.service.findMany({
             where: { id: { in: data.serviceIds } }
         });
@@ -45,7 +110,7 @@ export async function createAdminAppointment(data: {
                 storeId,
                 clientId: data.clientId,
                 staffId: data.staffId,
-                scheduledAt, // Agora salvo de forma absoluta (09:00Z para 09:00)
+                scheduledAt,
                 durationMinutes: totalDuration || 30,
                 totalAmount: totalAmount,
                 status: "SCHEDULED",
@@ -72,7 +137,6 @@ export async function getAppointments(date: Date) {
     try {
         const ownerId = await getEffectiveOwnerId();
         
-        // Usar UTC day boundaries para o filtro
         const start = new Date(date);
         start.setUTCHours(0,0,0,0);
         const end = new Date(date);

@@ -15,12 +15,18 @@ import { cn } from "@/lib/utils";
 
 export default function AppointmentsPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [appointments, setAppointments] = useState<any[]>([]);
     const [staff, setStaff] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [waitlist, setWaitlist] = useState<any[]>([]);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+    
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(interval);
+    }, []);
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -157,61 +163,124 @@ export default function AppointmentsPage() {
                             ))}
                         </div>
 
-                        <div className="bg-dark-800 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-                            <div className="divide-y divide-white/5">
-                                {timeSlots.map(time => {
-                                    const appointment = appointments.find(a => a.scheduledAt.split('T')[1].startsWith(time));
-                                    return (
-                                        <div key={time} className="group flex min-h-[80px] hover:bg-white/[0.02] transition-all">
-                                            <div className="w-24 flex items-center justify-center border-r border-white/5 text-xs font-bold text-zinc-500">
-                                                {time}
-                                            </div>
-                                            <div className="flex-1 p-3">
-                                                {appointment ? (
-                                                    <div className="h-full bg-dark-700/50 border border-white/5 rounded-2xl p-4 flex items-center justify-between group-hover:border-white/10 transition-all">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20">
-                                                                <User className="w-5 h-5 text-brand-400" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-white flex items-center gap-2">
-                                                                    {appointment.client.name}
-                                                                    {appointment.client.isDefaulter && (
-                                                                        <span className="bg-red-500/10 text-red-500 text-[9px] px-2 py-0.5 rounded-full border border-red-500/20 uppercase font-black">Inadimplente</span>
-                                                                    )}
-                                                                </p>
-                                                                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider mt-1 flex items-center gap-2">
-                                                                    <Scissors className="w-3 h-3" /> {appointment.service.name} • {appointment.staff.name}
-                                                                </p>
-                                                            </div>
+                        <div className="bg-dark-800 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
+                            <div className="overflow-x-auto">
+                                <div className="min-w-fit">
+                                    {/* Grid Header with Staff */}
+                                    <div className="flex bg-dark-900/50 border-b border-white/5 sticky top-0 z-20">
+                                        <div className="w-20 shrink-0" />
+                                        {staff.map(s => (
+                                            <div key={s.id} className="w-64 shrink-0 border-l border-white/5 p-4 flex items-center justify-center gap-3">
+                                                <div className="w-10 h-10 rounded-full border-2 border-brand-500/20 bg-dark-700 overflow-hidden flex-shrink-0">
+                                                    {s.avatarUrl ? (
+                                                        <img src={s.avatarUrl} alt={s.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-brand-400">
+                                                            <User className="w-5 h-5" />
                                                         </div>
-                                                        <div className="relative">
-                                                            <button 
-                                                                onClick={() => setOpenMenuId(openMenuId === appointment.id ? null : appointment.id)}
-                                                                className="p-2 hover:bg-white/5 rounded-lg transition-all text-zinc-500"
-                                                            >
-                                                                <MoreVertical className="w-5 h-5" />
-                                                            </button>
-                                                            {openMenuId === appointment.id && (
-                                                                <div className="absolute right-0 mt-2 w-48 bg-dark-800 border border-white/10 rounded-xl shadow-2xl py-2 z-50">
-                                                                    <button onClick={() => handleAppointmentStatus(appointment.id, 'COMPLETED')} className="w-full px-4 py-2 text-left text-xs font-bold text-emerald-400 hover:bg-white/5 flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Concluído</button>
-                                                                    <button onClick={() => handleDelete(appointment.id)} className="w-full px-4 py-2 text-left text-xs font-bold text-red-400 hover:bg-white/5 flex items-center gap-2"><XCircle className="w-4 h-4" /> Cancelar</button>
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <span className="text-xs font-black text-white uppercase tracking-wider block truncate">{s.name}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Grid Body */}
+                                    <div className="relative divide-y divide-white/5">
+                                        {/* Current Time Indicator */}
+                                        {isSameDay(selectedDate, new Date()) && currentTime.getHours() >= 8 && currentTime.getHours() <= 21 && (
+                                            <div 
+                                                className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                                                style={{ 
+                                                    top: `${((currentTime.getHours() - 8) * 60 + currentTime.getMinutes()) / 30 * 100}px` 
+                                                }}
+                                            >
+                                                <div className="w-20 flex justify-end pr-2">
+                                                    <span className="bg-brand-500 text-[9px] font-black text-white px-1.5 py-0.5 rounded shadow-lg uppercase">Agora</span>
+                                                </div>
+                                                <div className="flex-1 h-[2px] bg-brand-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
+                                            </div>
+                                        )}
+
+                                        {timeSlots.map(time => (
+                                            <div key={time} className="flex min-h-[100px] hover:bg-white/[0.01] transition-all group">
+                                                {/* Time Sidebar */}
+                                                <div className="w-20 shrink-0 flex items-center justify-center border-r border-white/5 text-[10px] font-black text-zinc-600 bg-dark-900/20">
+                                                    {time}
+                                                </div>
+
+                                                {/* Staff Columns */}
+                                                {staff.map(s => {
+                                                    const appointment = appointments.find(a => {
+                                                        const aptDate = new Date(a.scheduledAt);
+                                                        const aptTime = format(aptDate, "HH:mm");
+                                                        return aptTime === time && a.staff?.id === s.id;
+                                                    });
+
+                                                    return (
+                                                        <div key={s.id} className="w-64 shrink-0 border-l border-white/10 p-2 relative group/cell">
+                                                            {appointment ? (
+                                                                <div className="h-full bg-dark-700/40 border border-white/5 rounded-2xl p-4 flex flex-col justify-between group-hover:border-white/10 transition-all shadow-lg">
+                                                                    <div className="space-y-2">
+                                                                        <div className="flex items-start justify-between gap-2">
+                                                                            <div className="min-w-0">
+                                                                                <p className="text-xs font-bold text-white truncate">
+                                                                                    {appointment.client.name}
+                                                                                </p>
+                                                                                {appointment.client.isDefaulter && (
+                                                                                    <span className="inline-block bg-red-500/10 text-red-500 text-[8px] px-1.5 py-0.5 rounded-full border border-red-500/20 uppercase font-black mt-1">
+                                                                                        Devedor
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="relative shrink-0">
+                                                                                <button 
+                                                                                    onClick={() => setOpenMenuId(openMenuId === appointment.id ? null : appointment.id)}
+                                                                                    className="p-1 hover:bg-white/5 rounded-lg transition-all text-zinc-500"
+                                                                                >
+                                                                                    <MoreVertical className="w-4 h-4" />
+                                                                                </button>
+                                                                                {openMenuId === appointment.id && (
+                                                                                    <div className="absolute right-0 mt-2 w-48 bg-dark-800 border border-white/10 rounded-xl shadow-2xl py-2 z-50">
+                                                                                        <button onClick={() => handleAppointmentStatus(appointment.id, 'COMPLETED')} className="w-full px-4 py-2 text-left text-[10px] font-black text-emerald-400 hover:bg-white/5 flex items-center gap-2 uppercase tracking-widest"><CheckCircle className="w-4 h-4" /> Concluir</button>
+                                                                                        <button onClick={() => handleDelete(appointment.id)} className="w-full px-4 py-2 text-left text-[10px] font-black text-red-400 hover:bg-white/5 flex items-center gap-2 uppercase tracking-widest"><XCircle className="w-4 h-4" /> Cancelar</button>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider flex items-center gap-1.5 truncate">
+                                                                            <Scissors className="w-3 h-3 text-brand-500/50" /> 
+                                                                            {(appointment.items?.[0]?.service?.name || appointment.service?.name || "Serviço")}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 mt-auto pt-2">
+                                                                        <div className="px-2 py-0.5 rounded-md bg-dark-800 border border-white/5 text-[8px] font-bold text-zinc-400 uppercase tracking-tighter">
+                                                                           {appointment.durationMinutes || 30} min
+                                                                        </div>
+                                                                        {appointment.isSubscription && (
+                                                                            <div className="px-2 py-0.5 rounded-md bg-brand-500/10 border border-brand-500/20 text-[8px] font-bold text-brand-400 uppercase tracking-tighter">
+                                                                                Assinante
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
+                                                            ) : (
+                                                                <button 
+                                                                    onClick={() => { setFormData({ ...formData, time, staffId: s.id }); setIsModalOpen(true); }}
+                                                                    className="w-full h-full border-2 border-dashed border-white/5 rounded-2xl flex items-center justify-center opacity-0 group-hover/cell:opacity-100 hover:border-brand-500/20 hover:bg-brand-500/[0.02] transition-all"
+                                                                >
+                                                                    <Plus className="w-5 h-5 text-zinc-700" />
+                                                                </button>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <button 
-                                                        onClick={() => { setFormData({ ...formData, time }); setIsModalOpen(true); }}
-                                                        className="w-full h-full border-2 border-dashed border-white/5 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 hover:border-white/10 hover:bg-white/[0.02] transition-all"
-                                                    >
-                                                        <Plus className="w-5 h-5 text-zinc-600" />
-                                                    </button>
-                                                )}
+                                                    );
+                                                })}
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -8,7 +8,7 @@ import {
     Scissors, LayoutDashboard, Users, UserCog, Wrench, Package,
     Calendar, BarChart3, DollarSign, TrendingDown, CreditCard,
     Trophy, Percent, Image, Megaphone, Star, Bot, Settings,
-    LogOut, ChevronLeft, ChevronRight, Store, BadgePercent, Gift, PiggyBank
+    LogOut, ChevronLeft, ChevronRight, Store, BadgePercent, Gift, PiggyBank, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatbarberLogo } from "@/components/logo";
@@ -71,19 +71,18 @@ const navGroups = [
     },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
 
     return (
         <aside
             className={cn(
-                "relative flex flex-col bg-dark-800 border-r border-white/5 transition-all duration-300 ease-in-out flex-shrink-0",
-                collapsed ? "w-16" : "w-64"
+                "fixed inset-y-0 left-0 lg:relative z-50 flex flex-col bg-dark-800 border-r border-white/5 transition-all duration-300 ease-in-out flex-shrink-0",
+                collapsed ? "w-16" : "w-64",
+                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}
         >
-
-
             {/* Logo */}
             <div className={cn("flex items-center h-16 border-b border-white/5 px-4", collapsed ? "justify-center" : "gap-3")}>
                 <div className="flex-shrink-0">
@@ -94,18 +93,23 @@ export function Sidebar() {
                         Chat<span className="brand-gradient-text">Barber</span>
                     </span>
                 )}
+                
+                {/* Mobile Close Button */}
+                <button onClick={onClose} className="lg:hidden ml-auto p-2 text-zinc-400 hover:text-white">
+                    <X className="w-5 h-5" />
+                </button>
             </div>
 
-            {/* Collapse button */}
+            {/* Collapse button (Desktop only) */}
             <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-dark-600 border border-white/10 flex items-center justify-center hover:bg-dark-500 transition-colors z-10"
+                className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-dark-600 border border-white/10 items-center justify-center hover:bg-dark-500 transition-colors z-10"
             >
                 {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>
 
             {/* Nav */}
-            <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
+            <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6 scrollbar-hide">
                 {navGroups.map((group) => (
                     <div key={group.label}>
                         {!collapsed && (
@@ -120,6 +124,7 @@ export function Sidebar() {
                                     <Link
                                         key={item.href}
                                         href={item.href}
+                                        onClick={onClose}
                                         title={collapsed ? item.label : undefined}
                                         className={cn(
                                             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",

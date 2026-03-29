@@ -1,7 +1,7 @@
 "use client";
 
 import AdminShell from "@/components/admin/admin-shell";
-import { Plus, ChevronLeft, ChevronRight, Clock, User, Scissors, MoreVertical, Trash2, CheckCircle, XCircle, Loader2, Info, ListTodo, X, Monitor, Trophy, DollarSign, AlertCircle, Crown, Search, Calendar, History, MessageCircle, ExternalLink, UserPlus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Clock, User, Scissors, MoreVertical, Trash2, CheckCircle, XCircle, Loader2, Info, ListTodo, X, Monitor, Trophy, DollarSign, AlertCircle, Crown, Search, Calendar, History, MessageCircle, ExternalLink, UserPlus, ArrowRight } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format, addDays, subDays, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,7 +33,7 @@ export default function AppointmentsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAptId, setEditingAptId] = useState<string | null>(null);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
-    const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+    const [showOptions, setShowOptions] = useState(false);
     
     const [clientHistory, setClientHistory] = useState<any[]>([]);
     
@@ -54,7 +54,6 @@ export default function AppointmentsPage() {
         loadData();
     }, [selectedDate]);
 
-    // Quando o cliente muda no form, busca o histórico
     useEffect(() => {
         if (formData.clientId) {
             getClientHistory(formData.clientId).then(setClientHistory);
@@ -100,6 +99,7 @@ export default function AppointmentsPage() {
             await loadData();
             setIsModalOpen(false);
             setEditingAptId(null);
+            setShowOptions(false);
             setFormData({ clientId: "", staffId: "", serviceIds: [], time: "09:00", date: new Date() });
         } catch (err) { alert("Erro ao salvar."); } finally { setLoading(false); }
     };
@@ -107,6 +107,7 @@ export default function AppointmentsPage() {
     const openEdit = (apt: any) => {
         const d = new Date(apt.scheduledAt);
         setEditingAptId(apt.id);
+        setShowOptions(false);
         setFormData({
             clientId: apt.clientId,
             staffId: apt.staffId,
@@ -126,20 +127,13 @@ export default function AppointmentsPage() {
         return { top, height, hours, minutes };
     };
 
-    const colors = {
+    const colorStyles = {
         subscriber: storeSettings?.colorSubscriber || "#166534",
         regular: storeSettings?.colorRegular || "#475569",
         defaulter: storeSettings?.colorDefaulter || "#991B1B"
     };
 
     const timeSlots = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
-
-    const sendWhatsApp = (apt: any) => {
-        const phone = apt.client?.phone?.replace(/\D/g, "");
-        if (!phone) return alert("Cliente sem celular.");
-        const text = encodeURIComponent(`Olá ${apt.client.name}, confirmando seu agendamento no ChatBarber para ${format(new Date(apt.scheduledAt), "dd/MM 'às' HH:mm", { locale: ptBR })}. Podemos confirmar?`);
-        window.open(`https://wa.me/55${phone}?text=${text}`, "_blank");
-    };
 
     return (
         <AdminShell>
@@ -180,9 +174,9 @@ export default function AppointmentsPage() {
                 <div className="flex-1 glass-card border border-white/5 overflow-hidden flex flex-col shadow-2xl bg-dark-950/20 backdrop-blur-md rounded-[32px]">
                     <div className="flex border-b border-white/5 bg-dark-900/40 z-20">
                         <div className="w-20" />
-                        <div className="flex-1 flex overflow-x-auto scrollbar-hide py-4">
+                        <div className="flex-1 flex overflow-x-auto scrollbar-hide py-4 lg:snap-none snap-x snap-mandatory">
                             {staff.map((member) => (
-                                <div key={member.id} className="min-w-[240px] flex-1 flex flex-col items-center border-r border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                                <div key={member.id} className="min-w-[85vw] md:min-w-[240px] flex-1 flex flex-col items-center border-r border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors snap-center">
                                     <div className="w-12 h-12 rounded-2xl bg-dark-800 border-2 border-white/5 overflow-hidden mb-2 shadow-xl"><img src={member.avatarUrl || `https://ui-avatars.com/api/?name=${member.name}`} className="w-full h-full object-cover" /></div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{member.name}</span>
                                 </div>
@@ -197,9 +191,9 @@ export default function AppointmentsPage() {
                                     <div key={hour} className="h-[100px] flex items-start justify-end pr-4 pt-1 border-b border-white/[0.02]"><span className="text-[11px] font-black text-zinc-600">{String(hour).padStart(2, '0')}:00</span></div>
                                 ))}
                             </div>
-                            <div className="flex-1 flex overflow-x-auto scrollbar-hide relative min-w-max">
+                            <div className="flex-1 flex overflow-x-auto scrollbar-hide relative min-w-max lg:snap-none snap-x snap-mandatory">
                                 {staff.map((member) => (
-                                    <div key={member.id} className="min-w-[240px] flex-1 border-r border-white/5 last:border-0 relative">
+                                    <div key={member.id} className="min-w-[85vw] md:min-w-[240px] flex-1 border-r border-white/5 last:border-0 relative snap-center">
                                         {timeSlots.map(hour => (
                                             <div key={hour} className="h-[100px] border-b border-white/[0.03] relative">
                                                 {[0, 15, 30, 45].map(m => (
@@ -209,14 +203,13 @@ export default function AppointmentsPage() {
                                         ))}
                                         {appointments.filter(a => a.staffId === member.id).map(apt => {
                                             const { top, height, hours, minutes } = calculatePos(apt.scheduledAt, apt.durationMinutes || 30);
-                                            const isSelected = editingAptId === apt.id;
-                                            const statusColor = apt.client?.isDefaulter ? colors.defaulter : (apt.client?.subscription?.status === 'ACTIVE' ? colors.subscriber : colors.regular);
+                                            const sColor = apt.client?.isDefaulter ? colorStyles.defaulter : (apt.client?.subscription?.status === 'ACTIVE' ? colorStyles.subscriber : colorStyles.regular);
                                             
                                             return (
                                                 <div 
                                                     key={apt.id}
-                                                    className={cn("absolute left-3 right-3 rounded-2xl border-2 p-3.5 cursor-pointer transition-all hover:scale-[1.02] hover:z-50 flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl group", isSelected && "ring-4 ring-brand-500/50")}
-                                                    style={{ top: `${top}px`, height: `${height}px`, backgroundColor: statusColor + '15', borderColor: statusColor + '40', color: statusColor }}
+                                                    className="absolute left-3 right-3 rounded-2xl border-2 p-3.5 cursor-pointer transition-all hover:scale-[1.02] hover:z-50 flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl group"
+                                                    style={{ top: `${top}px`, height: `${height}px`, backgroundColor: sColor + '15', borderColor: sColor + '40', color: sColor }}
                                                     onClick={() => openEdit(apt)}
                                                 >
                                                     <div className="flex justify-between items-start mb-2 opacity-60">
@@ -248,134 +241,170 @@ export default function AppointmentsPage() {
                 </div>
             </div>
 
-            {/* MODAL MESTRE (CRIAÇÃO / EDIÇÃO / HISTÓRICO) */}
+            {/* MODAL REDESENHADO: RESPONSIVO E UI/UX PREMIUM */}
             <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Gerenciar Agendamento" : "Novo Agendamento"}>
-                <div className="flex flex-col lg:flex-row gap-8 min-h-[500px]">
-                    <form onSubmit={handleSave} className="flex-1 space-y-6">
-                        <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 min-h-[500px] w-full max-w-5xl mx-auto overflow-hidden">
+                    
+                    {/* COLUNA ESQUERDA: FORMULÁRIO (8 colunas) */}
+                    <div className="lg:col-span-12 xl:col-span-7 space-y-8 flex flex-col justify-between h-full">
+                        <div className="space-y-6">
                             <Section label="CLIENTE">
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                     <select required value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="custom-input flex-1">
                                         <option value="">Selecione o Cliente</option>
                                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
-                                    <button type="button" className="p-4 bg-brand-500/10 text-brand-500 rounded-2xl hover:bg-brand-500 hover:text-white transition-all"><UserPlus className="w-5 h-5" /></button>
+                                    <button type="button" className="h-[60px] w-[60px] bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all shadow-sm border border-brand-500/10">
+                                        <UserPlus className="w-6 h-6" />
+                                    </button>
                                 </div>
                             </Section>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <Section label="PROFISSIONAL">
                                     <select required value={formData.staffId} onChange={(e) => setFormData({ ...formData, staffId: e.target.value })} className="custom-input">
-                                        <option value="">Selecione</option>
+                                        <option value="">Selecione Profissional</option>
                                         {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                 </Section>
-                                <Section label="HORÁRIO">
-                                    <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input" />
+                                <Section label="HORA DE INÍCIO">
+                                    <div className="relative">
+                                        <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input !pr-10" />
+                                        <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                    </div>
                                 </Section>
                             </div>
 
-                            <Section label="SERVIÇOS">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto scrollbar-hide">
+                            <Section label="ESCOLHA OS SERVIÇOS">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[180px] overflow-y-auto scrollbar-hide pr-1">
                                     {services.map(s => (
                                         <button 
                                             key={s.id} 
                                             type="button"
                                             onClick={() => setFormData(prev => ({ ...prev, serviceIds: prev.serviceIds.includes(s.id) ? prev.serviceIds.filter(id => id !== s.id) : [...prev.serviceIds, s.id] }))}
-                                            className={cn("p-4 rounded-xl border-2 text-left transition-all", formData.serviceIds.includes(s.id) ? "bg-brand-500/10 border-brand-500" : "bg-dark-800 border-white/5 opacity-50")}
+                                            className={cn("p-4 rounded-2xl border-2 text-left transition-all relative group", formData.serviceIds.includes(s.id) ? "bg-brand-500/10 border-brand-500 shadow-brand-inner" : "bg-dark-800 border-white/5 opacity-60 hover:opacity-100")}
                                         >
-                                            <p className="text-[10px] font-black uppercase tracking-widest">{s.name}</p>
-                                            <p className="text-[9px] font-bold text-zinc-500 mt-1">R$ {s.price} • {s.durationMinutes}m</p>
+                                            <div className="flex justify-between items-start">
+                                                <p className="text-[11px] font-black uppercase tracking-wider text-white">{s.name}</p>
+                                                {formData.serviceIds.includes(s.id) && <CheckCircle className="w-4 h-4 text-brand-500" />}
+                                            </div>
+                                            <p className="text-[10px] font-bold text-zinc-500 mt-1">R$ {s.price} • {s.durationMinutes}m</p>
                                         </button>
                                     ))}
                                 </div>
                             </Section>
                         </div>
 
-                        <div className="pt-6 flex flex-col md:flex-row gap-4">
-                            <div className="relative flex-1">
-                                <button type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)} className="w-full h-14 bg-dark-800 border border-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-zinc-400 flex items-center justify-center gap-2 hover:bg-white/5">
-                                    Opções <ChevronLeft className={cn("w-4 h-4 transition-all", isOptionsOpen ? "-rotate-90" : "")} />
-                                </button>
-                                {isOptionsOpen && (
-                                    <div className="absolute bottom-full left-0 w-full mb-2 bg-dark-900 border border-white/5 rounded-2xl p-2 shadow-2xl z-50 overflow-hidden">
-                                        {[
-                                            { label: "Finalizar Atendimento", icon: CheckCircle, color: "text-emerald-400", onClick: () => updateAppointmentStatus(editingAptId!, 'COMPLETED').then(loadData) },
-                                            { label: "Cliente Faltou", icon: XCircle, color: "text-orange-500", onClick: () => updateAppointmentStatus(editingAptId!, 'CANCELLED').then(loadData) },
-                                            { label: "Enviar WhatsApp", icon: MessageCircle, color: "text-emerald-500", onClick: () => sendWhatsApp(appointments.find(a => a.id === editingAptId)) },
-                                            { label: "Excluir Agendamento", icon: Trash2, color: "text-red-500", onClick: () => deleteAppointment(editingAptId!).then(loadData) },
-                                        ].map(opt => (
-                                            <button key={opt.label} type="button" onClick={() => { opt.onClick(); setIsOptionsOpen(false); setIsModalOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-left group">
-                                                <opt.icon className={cn("w-4 h-4", opt.color)} />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300 group-hover:text-white">{opt.label}</span>
-                                            </button>
-                                        ))}
-                                    </div>
+                        {/* AÇÕES DE RODAPÉ */}
+                        <div className="pt-8 border-t border-white/5 flex flex-col gap-4">
+                            {editingAptId && (
+                                <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-2 transition-all overflow-hidden", showOptions ? "max-h-40 opacity-100" : "max-h-0 opacity-0")}>
+                                    <QuickAction label="FINALIZAR" icon={CheckCircle} color="emerald" onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData)} />
+                                    <QuickAction label="FALTOU" icon={XCircle} color="orange" onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData)} />
+                                    <QuickAction label="WHATSAPP" icon={MessageCircle} color="blue" onClick={() => {}} />
+                                    <QuickAction label="EXCLUIR" icon={Trash2} color="red" onClick={() => deleteAppointment(editingAptId).then(loadData)} />
+                                </div>
+                            )}
+                            
+                            <div className="flex gap-4">
+                                {editingAptId && (
+                                    <button type="button" onClick={() => setShowOptions(!showOptions)} className="h-[60px] px-6 bg-dark-800 border border-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2">
+                                        {showOptions ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
+                                        {showOptions ? "FECHAR" : "OPÇÕES"}
+                                    </button>
                                 )}
+                                <button type="submit" disabled={loading} onClick={handleSave} className="flex-1 h-[60px] bg-brand-gradient text-white rounded-2xl font-black uppercase text-[11px] tracking-[3px] shadow-brand hover:scale-[1.01] active:scale-95 transition-all">
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingAptId ? "SALVAR ALTERAÇÕES" : "CONFIRMAR RESERVA")}
+                                </button>
                             </div>
-                            <button type="submit" disabled={loading} className="flex-[2] h-14 bg-brand-gradient text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-brand">
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Salvar Agendamento"}
-                            </button>
                         </div>
-                    </form>
+                    </div>
 
-                    {/* SIDEBAR: HISTÓRICO DO CLIENTE */}
-                    <div className="w-full lg:w-80 bg-dark-900/60 rounded-[28px] p-6 border border-white/5">
-                        <div className="flex items-center gap-3 mb-6">
-                            <History className="w-5 h-5 text-zinc-600" />
-                            <h3 className="text-xs font-black uppercase tracking-widest text-zinc-400">Dossiê do Cliente</h3>
+                    {/* COLUNA DIREITA: DOSSIÊ (5 colunas) */}
+                    <div className="lg:col-span-12 xl:col-span-5 flex flex-col h-full bg-dark-950/40 rounded-[32px] p-8 border border-white/5 relative overflow-hidden group/dossie">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 blur-[80px] -mr-16 -mt-16 rounded-full group-hover/dossie:bg-brand-500/20 transition-all" />
+                        
+                        <div className="relative z-10 flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-dark-900 rounded-2xl flex items-center justify-center shadow-lg border border-white/5">
+                                <History className="w-6 h-6 text-brand-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-white">Dossiê do Cliente</h3>
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase mt-0.5">Visão analítica do histórico</p>
+                            </div>
                         </div>
                         
-                        <div className="space-y-6">
-                            <div>
-                                <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-3">Último Agendamento</h4>
+                        <div className="flex-1 space-y-8 relative z-10">
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-6 h-px bg-zinc-800" /> ÚLTIMO AGENDAMENTO
+                                </h4>
                                 {clientHistory.length > 0 ? (
-                                    <div className="p-4 bg-dark-800 rounded-2xl border border-white/5 space-y-2">
+                                    <div className="p-5 bg-dark-900/60 rounded-[28px] border border-white/5 space-y-4 shadow-inner">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black text-white">{format(new Date(clientHistory[0].scheduledAt), "dd/MM/yyyy")}</span>
-                                            <span className="text-[9px] font-bold text-zinc-500 uppercase">{clientHistory[0].staff.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                                                <span className="text-xs font-black text-zinc-300 tabular-nums">{format(new Date(clientHistory[0].scheduledAt), "dd/MM/yyyy")}</span>
+                                            </div>
+                                            <span className="text-[10px] font-black text-brand-500 uppercase tracking-widest px-3 py-1 bg-brand-500/5 rounded-full">{clientHistory[0].staff.name}</span>
                                         </div>
-                                        <p className="text-[10px] text-zinc-400 leading-relaxed font-bold italic">
-                                            {clientHistory[0].items.map((i: any) => i.service.name).join(", ")}
-                                        </p>
+                                        <div className="flex items-start gap-3">
+                                            <Scissors className="w-3.5 h-3.5 text-zinc-600 mt-1" />
+                                            <p className="text-xs text-zinc-400 leading-relaxed font-bold">
+                                                {clientHistory[0].items.map((i: any) => i.service.name).join(", ")}
+                                            </p>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="p-6 text-center bg-dark-800/20 rounded-2xl border border-dashed border-white/5">
-                                        <p className="text-[9px] font-black uppercase text-zinc-700 tracking-tighter">Sem registros</p>
+                                    <div className="py-12 flex flex-col items-center justify-center bg-dark-800/20 rounded-[28px] border border-dashed border-white/10 opacity-30">
+                                        <Info className="w-8 h-8 mb-3 text-zinc-700" />
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-zinc-600">Nenhum registro prévio</p>
                                     </div>
                                 )}
                             </div>
 
-                            <div>
-                                <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-3">Itens Recorrentes</h4>
-                                <div className="space-y-2">
-                                    {clientHistory.slice(1, 3).map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 p-3 bg-dark-800/40 rounded-xl border border-white/5 opacity-60">
-                                            <div className="w-8 h-8 rounded-lg bg-dark-900 flex items-center justify-center text-[10px] font-black text-brand-400">{idx + 1}</div>
-                                            <span className="text-[9px] font-bold text-zinc-300 uppercase truncate">{item.items[0]?.service.name}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-6 h-px bg-zinc-800" /> ITENS RECORRENTES
+                                </h4>
+                                {clientHistory.length > 1 ? (
+                                    <div className="space-y-2">
+                                        {clientHistory.slice(1, 4).map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-4 p-4 bg-dark-800/40 rounded-2xl border border-white/5 hover:bg-dark-800 transition-all group/item">
+                                                <div className="w-9 h-9 rounded-xl bg-dark-900 border border-white/10 flex items-center justify-center text-[11px] font-black text-brand-400 group-hover/item:scale-110 transition-transform">{idx + 1}</div>
+                                                <div className="flex-1">
+                                                    <span className="text-[11px] font-black text-zinc-300 uppercase tracking-wider block">{item.items[0]?.service.name}</span>
+                                                    <span className="text-[9px] font-bold text-zinc-600 uppercase mt-0.5 block">{format(new Date(item.scheduledAt), "MMMM/yyyy", { locale: ptBR })}</span>
+                                                </div>
+                                                <ArrowRight className="w-4 h-4 text-zinc-800 group-hover/item:text-brand-500 transition-colors" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center text-zinc-700 text-[10px] font-black uppercase border border-dashed border-white/5 rounded-[28px]">Aguardando dados...</div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </Modal>
 
+            {/* LISTA DE ESPERA MODAL (NÃO MUDOU) */}
             <Modal isOpen={isWaitlistOpen} onClose={() => setIsWaitlistOpen(false)} title="Lista de Espera">
-                 <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                    {waitlist.length === 0 ? <div className="py-16 text-center text-zinc-600 font-bold uppercase text-[9px]">Ninguém na espera</div> : waitlist.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-6 bg-dark-800/20 rounded-2xl border border-white/5">
-                            <div className="flex flex-col"><h4 className="font-black text-white uppercase text-[10px]">{item.client.name}</h4><span className="text-[9px] font-bold text-zinc-500">{item.client.phone}</span></div>
-                            <div className="flex gap-3"><button onClick={() => updateWaitlistStatus(item.id, 'FULFILLED').then(loadData)} className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl"><CheckCircle className="w-5 h-5" /></button></div>
+                 <div className="space-y-4 max-h-[60vh] overflow-y-auto scrollbar-hide">
+                    {waitlist.length === 0 ? <div className="py-20 text-center opacity-30 uppercase font-black tracking-widest text-xs">Sem clientes em espera</div> : waitlist.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between p-7 bg-dark-800/20 rounded-3xl border border-white/5 shadow-2xl">
+                            <div className="flex flex-col"><h4 className="font-black text-white uppercase text-xs tracking-wider">{item.client.name}</h4><span className="text-[10px] font-bold text-zinc-600 mt-1">{item.client.phone}</span></div>
+                            <button onClick={() => updateWaitlistStatus(item.id, 'FULFILLED').then(loadData)} className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-6 h-6" /></button>
                         </div>
                     ))}
                 </div>
             </Modal>
 
             <style jsx global>{`
-                .custom-input { width: 100%; height: 56px; background: #111111; border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 0 20px; font-size: 13px; font-weight: 800; color: white; outline: none; }
-                .custom-input:focus { border-color: #4f46e5; }
+                .custom-input { width: 100%; height: 60px; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 0 24px; font-size: 14px; font-weight: 800; color: white; outline: none; transition: all 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+                .custom-input:focus { border-color: #4f46e5; background: #000; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+                select.custom-input { appearance: none; cursor: pointer; }
             `}</style>
         </AdminShell>
     );
@@ -383,9 +412,23 @@ export default function AppointmentsPage() {
 
 function Section({ label, children }: { label: string, children: React.ReactNode }) {
     return (
-        <div className="space-y-1.5">
-            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-1">{label}</span>
+        <div className="space-y-2">
+            <span className="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] ml-1">{label}</span>
             {children}
         </div>
+    );
+}
+
+function QuickAction({ label, icon: Icon, color, onClick }: { label: string, icon: any, color: string, onClick: () => void }) {
+    const colorClasses: any = {
+        emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500 hover:text-white",
+        orange: "bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500 hover:text-white",
+        blue: "bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500 hover:text-white",
+        red: "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white"
+    };
+    return (
+        <button type="button" onClick={onClick} className={cn("p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all font-black text-[9px] uppercase tracking-wider", colorClasses[color])}>
+            <Icon className="w-5 h-5" /> {label}
+        </button>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Calendar, Clock, User, Scissors, ChevronRight, Loader2, CalendarX } from "lucide-react";
+import { Calendar, Clock, User, Scissors, ChevronRight, Loader2, CalendarX, History as HistoryIcon, MapPin } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getClientAppointments } from "@/app/actions/appointment-actions";
@@ -51,7 +51,7 @@ export default function ClientAppointmentsPage() {
     }
 
     return (
-        <div className="max-w-xl mx-auto py-6 md:py-10 space-y-8">
+        <div className="max-w-xl mx-auto py-6 md:py-10 space-y-8 pb-32">
             <header className="flex items-center justify-between px-2">
                 <div>
                     <h1 className="text-2xl font-black italic uppercase tracking-tight text-zinc-900 group flex items-center gap-2">
@@ -59,13 +59,24 @@ export default function ClientAppointmentsPage() {
                     </h1>
                     <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest mt-1">Histórico completo de visitas</p>
                 </div>
-                <Link 
-                    href={`/booking/${storeId}/agendar`}
-                    className="w-12 h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-orange-600 transition-all active:scale-95"
-                >
-                    <PlusIcon className="w-6 h-6" />
-                </Link>
             </header>
+
+            {/* Bottom Nav for Client App - Premium Touch */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-zinc-100 px-6 py-4 flex items-center justify-between z-50 lg:hidden">
+                 <Link href={`/booking/${storeId}/agendar`} className="flex flex-col items-center gap-1 group">
+                    <div className="p-3 bg-orange-600 text-white rounded-2xl shadow-lg ring-4 ring-orange-600/10 group-active:scale-95 transition-all">
+                        <Calendar className="w-6 h-6" />
+                    </div>
+                </Link>
+                <Link href={`/booking/${storeId}/agendamentos`} className="flex flex-col items-center gap-1 text-orange-600">
+                    <HistoryIcon className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Agenda</span>
+                </Link>
+                <Link href={`/booking/${storeId}/lojas`} className="flex flex-col items-center gap-1 text-zinc-400">
+                    <MapPin className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Lojas</span>
+                </Link>
+            </div>
 
             {appointments.length === 0 && waitlist.length === 0 ? (
                 <div className="py-20 flex flex-col items-center text-center px-6">

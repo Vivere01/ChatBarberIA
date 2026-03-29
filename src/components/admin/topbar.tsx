@@ -1,27 +1,34 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { Bell, Search, ChevronDown, Store, LogOut, Settings, User } from "lucide-react";
+import { Bell, Search, ChevronDown, Store, LogOut, Settings, User, Menu } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { useState } from "react";
 import Link from "next/link";
 
-export function Topbar() {
+export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
     const { data: session } = useSession();
     const user = session?.user;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
     return (
-        <header className="h-16 border-b border-white/5 bg-dark-800 flex items-center justify-between px-6 flex-shrink-0 relative z-30">
-            {/* Search */}
-            <div className="flex items-center gap-3 flex-1 max-w-md">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                    <input
-                        type="text"
-                        placeholder="Buscar clientes, serviços..."
-                        className="w-full bg-dark-700 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-brand-500/30 transition-all"
-                    />
+        <header className="h-16 border-b border-white/5 bg-dark-800 flex items-center justify-between px-4 md:px-6 flex-shrink-0 relative z-30">
+            <div className="flex items-center gap-4 flex-1">
+                {/* Mobile Menu Toggle */}
+                <button onClick={onMenuClick} className="lg:hidden p-2 text-zinc-400 hover:text-white">
+                    <Menu className="w-6 h-6" />
+                </button>
+
+                {/* Search - Hidden on very small mobile */}
+                <div className="hidden sm:flex items-center gap-3 flex-1 max-w-md">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            className="w-full bg-dark-700 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-brand-500/30 transition-all"
+                        />
+                    </div>
                 </div>
             </div>
 

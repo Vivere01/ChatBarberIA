@@ -30,7 +30,7 @@ export async function getClientAppointments(storeId: string) {
 export async function createAdminAppointment(data: {
     clientId: string;
     staffId: string;
-    serviceId: string;
+    serviceIds: string[];
     time: string;
     date: Date;
 }) {
@@ -43,10 +43,13 @@ export async function createAdminAppointment(data: {
         const scheduledAt = new Date(data.date);
         scheduledAt.setHours(hours, minutes, 0, 0);
 
-        // Fetch service for price & duration
-        const service = data.serviceId
-            ? await prisma.service.findUnique({ where: { id: data.serviceId } })
-            : null;
+        // Fetch services for price & duration
+        const services = await prisma.service.findMany({
+            where: { id: { in: data.serviceIds } }
+        });
+
+        const totalDuration = services.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+        const totalAmount = services.reduce((acc, s) => acc + s.price, 0);
 
         const appointment = await prisma.appointment.create({
             data: {
@@ -54,19 +57,17 @@ export async function createAdminAppointment(data: {
                 clientId: data.clientId,
                 staffId: data.staffId,
                 scheduledAt,
-                durationMinutes: service?.durationMinutes ?? 30,
-                totalAmount: service?.price ?? 0,
+                durationMinutes: totalDuration || 30,
+                totalAmount: totalAmount,
                 status: "SCHEDULED",
-                ...(service ? {
-                    items: {
-                        create: [{
-                            serviceId: service.id,
-                            quantity: 1,
-                            unitPrice: service.price,
-                            totalPrice: service.price,
-                        }]
-                    }
-                } : {})
+                items: {
+                    create: services.map(s => ({
+                        serviceId: s.id,
+                        quantity: 1,
+                        unitPrice: s.price,
+                        totalPrice: s.price,
+                    }))
+                }
             }
         });
 
@@ -147,7 +148,15 @@ export async function getAppointments(date: Date) {
                 }
             },
             include: {
-                client: { select: { id: true, name: true, phone: true, isDefaulter: true } },
+                client: { 
+                    select: { 
+                        id: true, 
+                        name: true, 
+                        phone: true, 
+                        isDefaulter: true,
+                        subscription: { select: { status: true } }
+                    } 
+                },
                 staff: { select: { id: true, name: true, avatarUrl: true } },
                 items: {
                     include: {

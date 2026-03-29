@@ -1,9 +1,9 @@
 "use client";
 
 import AdminShell from "@/components/admin/admin-shell";
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, Scissors, MoreVertical, Trash2, CheckCircle, XCircle, Loader2, Info, ListTodo } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, Scissors, MoreVertical, Trash2, CheckCircle, XCircle, Loader2, Info, ListTodo, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { format, addDays, subDays, startOfWeek, isSameDay, startOfDay, eachMinuteOfInterval, setHours, setMinutes, isWithinInterval, addMinutes } from "date-fns";
+import { format, addDays, subDays, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Modal } from "@/components/ui/modal";
 import { createAdminAppointment, getAppointments, updateAppointmentStatus, deleteAppointment } from "@/app/actions/appointment-actions";
@@ -13,7 +13,7 @@ import { getClientsList } from "@/app/actions/client-actions";
 import { getWaitlistEntries, updateWaitlistStatus } from "@/app/actions/waitlist-actions";
 import { cn } from "@/lib/utils";
 
-const TIME_SLOT_HEIGHT = 80; // Aumentado para dar mais espaço
+const TIME_SLOT_HEIGHT = 80;
 const MINUTE_HEIGHT = TIME_SLOT_HEIGHT / 60;
 
 export default function AppointmentsPage() {
@@ -31,10 +31,15 @@ export default function AppointmentsPage() {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     
     // Form data
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        clientId: string;
+        staffId: string;
+        serviceIds: string[];
+        time: string;
+    }>({
         clientId: "",
-        serviceId: "",
         staffId: "",
+        serviceIds: [],
         time: "09:00"
     });
 
@@ -73,6 +78,7 @@ export default function AppointmentsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (formData.serviceIds.length === 0) return alert("Selecione ao menos um serviço.");
         setLoading(true);
         try {
             const result = await createAdminAppointment({
@@ -82,7 +88,7 @@ export default function AppointmentsPage() {
             if (result.success) {
                 loadData();
                 setIsModalOpen(false);
-                setFormData({ clientId: "", serviceId: "", staffId: "", time: "09:00" });
+                setFormData({ clientId: "", staffId: "", serviceIds: [], time: "09:00" });
             } else { alert(result.error); }
         } catch (err) { alert("Erro na conexão."); } finally { setLoading(false); }
     };
@@ -103,6 +109,31 @@ export default function AppointmentsPage() {
             time: `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
         });
         setIsModalOpen(true);
+    };
+
+    const toggleService = (id: string) => {
+        setFormData(prev => ({
+            ...prev,
+            serviceIds: prev.serviceIds.includes(id) 
+                ? prev.serviceIds.filter(sid => sid !== id)
+                : [...prev.serviceIds, id]
+        }));
+    };
+
+    const getAppointmentColorStyles = (apt: any) => {
+        if (apt.client?.isDefaulter) {
+            return "bg-red-500/20 border-red-500/40 text-red-100 hover:bg-red-500/30";
+        }
+        if (apt.client?.subscription?.status === 'ACTIVE') {
+            return "bg-emerald-500/20 border-emerald-500/40 text-emerald- account focus:ring-emerald-500/50 hover:bg-emerald-500/30";
+        }
+        return "bg-zinc-500/10 border-zinc-500/20 text-zinc-300 hover:bg-zinc-500/20";
+    };
+
+    const getStatusIndicatorColor = (apt: any) => {
+        if (apt.client?.isDefaulter) return "bg-red-500 shadow-red-sm";
+        if (apt.client?.subscription?.status === 'ACTIVE') return "bg-emerald-500 shadow-emerald-sm";
+        return "bg-zinc-500 shadow-zinc-sm";
     };
 
     // Gerar horários (08:00 - 22:00)
@@ -160,13 +191,9 @@ export default function AppointmentsPage() {
                                 </span>
                             )}
                         </button>
-                        <button className="hidden xl:flex items-center gap-2 bg-dark-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold border border-white/5 hover:bg-white/5 transition-all">
-                            <Plus className="w-4 h-4 text-brand-400" />
-                            Nova comanda de consumo
-                        </button>
                         <button 
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 bg-brand-gradient text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-brand hover:scale-105 transition-all"
+                            className="flex items-center gap-2 bg-brand-gradient text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-brand hover:scale-105 transition-all text-white"
                         >
                             <Plus className="w-4 h-4" />
                             Novo agendamento
@@ -176,13 +203,13 @@ export default function AppointmentsPage() {
                 </div>
 
                 {/* Grid Agenda */}
-                <div className="flex-1 glass-card rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-2xl relative">
+                <div className="flex-1 glass-card rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-2xl relative bg-dark-900/40">
                     {/* Header dos Barbeiros */}
                     <div className="flex border-b border-white/5 bg-dark-800/80 backdrop-blur-md z-20">
                         <div className="w-20 border-r border-white/5 flex-shrink-0" />
                         <div className="flex-1 flex overflow-x-auto scrollbar-hide py-4">
                             {staff.map((member) => (
-                                <div key={member.id} className="min-w-[200px] flex-1 flex flex-center px-4 border-r border-white/5 last:border-0">
+                                <div key={member.id} className="min-w-[220px] flex-1 flex flex-center px-4 border-r border-white/5 last:border-0">
                                     <div className="flex items-center gap-3 mx-auto">
                                         <div className="w-10 h-10 rounded-xl bg-dark-700 border border-white/10 overflow-hidden shadow-inner flex-shrink-0">
                                             {member.avatarUrl ? (
@@ -191,7 +218,7 @@ export default function AppointmentsPage() {
                                                 <div className="w-full h-full flex items-center justify-center font-bold text-zinc-500 uppercase">{member.name[0]}</div>
                                             )}
                                         </div>
-                                        <span className="font-bold text-sm text-zinc-200 truncate max-w-[120px]">{member.name}</span>
+                                        <span className="font-bold text-sm text-zinc-200 truncate max-w-[130px]">{member.name}</span>
                                     </div>
                                 </div>
                             ))}
@@ -215,97 +242,105 @@ export default function AppointmentsPage() {
                             {/* Grade Central */}
                             <div className="flex-1 flex overflow-x-auto scrollbar-hide relative group">
                                 {staff.map((member) => (
-                                    <div key={member.id} className="min-w-[200px] flex-1 border-r border-white/5 last:border-0 relative">
+                                    <div key={member.id} className="min-w-[220px] flex-1 border-r border-white/5 last:border-0 relative">
                                         {/* Clickable Time Slots Overlay */}
                                         {timeSlots.map(hour => (
                                             <div key={hour} className="h-[80px] border-b border-white/[0.03] relative">
-                                                {/* Slots de 30 min para clique */}
                                                 <button 
                                                     onClick={() => openCreateAtSlot(member.id, hour, 0)}
-                                                    className="absolute top-0 w-full h-1/2 hover:bg-white/[0.02] transition-colors outline-none"
+                                                    className="absolute top-0 w-full h-1/4 hover:bg-white/[0.02] transition-colors outline-none"
+                                                />
+                                                <button 
+                                                    onClick={() => openCreateAtSlot(member.id, hour, 15)}
+                                                    className="absolute top-1/4 w-full h-1/4 hover:bg-white/[0.02] border-t border-white/[0.01] transition-colors outline-none"
                                                 />
                                                 <button 
                                                     onClick={() => openCreateAtSlot(member.id, hour, 30)}
-                                                    className="absolute top-1/2 w-full h-1/2 hover:bg-white/[0.02] border-t border-white/[0.01] transition-colors outline-none"
+                                                    className="absolute top-2/4 w-full h-1/4 hover:bg-white/[0.02] border-t border-white/[0.01] transition-colors outline-none"
+                                                />
+                                                <button 
+                                                    onClick={() => openCreateAtSlot(member.id, hour, 45)}
+                                                    className="absolute top-3/4 w-full h-1/4 hover:bg-white/[0.02] border-t border-white/[0.01] transition-colors outline-none"
                                                 />
                                             </div>
                                         ))}
 
                                         {/* Agendamentos */}
-                                        {fetching ? (
-                                             <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                                                 <Loader2 className="w-8 h-8 animate-spin" />
-                                             </div>
-                                        ) : (
-                                            appointments
-                                                .filter(apt => apt.staffId === member.id)
-                                                .map(apt => {
-                                                    const scheduledAt = new Date(apt.scheduledAt);
-                                                    const startMinutes = (scheduledAt.getHours() - startHour) * 60 + scheduledAt.getMinutes();
-                                                    const top = startMinutes * MINUTE_HEIGHT;
-                                                    const height = Math.max((apt.durationMinutes || 30) * MINUTE_HEIGHT, 40);
+                                        {!fetching && appointments
+                                            .filter(apt => apt.staffId === member.id)
+                                            .map(apt => {
+                                                const scheduledAt = new Date(apt.scheduledAt);
+                                                const startMinutes = (scheduledAt.getHours() - startHour) * 60 + scheduledAt.getMinutes();
+                                                const top = startMinutes * MINUTE_HEIGHT;
+                                                const height = Math.max((apt.durationMinutes || 30) * MINUTE_HEIGHT, 40);
 
-                                                    return (
-                                                        <div 
-                                                            key={apt.id}
-                                                            className={cn(
-                                                                "absolute left-1 right-1 rounded-xl p-3 border shadow-lg cursor-pointer transition-all hover:scale-[1.02] hover:z-30 group overflow-hidden select-none",
-                                                                apt.status === 'SCHEDULED' ? "bg-brand-500/10 border-brand-500/20 active:bg-brand-500/20" : 
-                                                                apt.status === 'COMPLETED' ? "bg-emerald-500/10 border-emerald-500/20" : 
-                                                                "bg-zinc-500/10 border-zinc-500/20"
-                                                            )}
-                                                            style={{ top: `${top}px`, height: `${height}px` }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setOpenMenuId(openMenuId === apt.id ? null : apt.id);
-                                                            }}
-                                                        >
-                                                            <div className="flex justify-between items-start">
-                                                                <div>
-                                                                    <p className="text-[10px] font-black text-zinc-400 mb-0.5 leading-none bg-dark-900/40 w-fit px-1 rounded">
+                                                return (
+                                                    <div 
+                                                        key={apt.id}
+                                                        className={cn(
+                                                            "absolute left-1.5 right-1.5 rounded-2xl p-3 border shadow-2xl cursor-pointer transition-all hover:scale-[1.03] hover:z-30 group overflow-hidden select-none backdrop-blur-sm",
+                                                            getAppointmentColorStyles(apt)
+                                                        )}
+                                                        style={{ top: `${top}px`, height: `${height}px` }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(openMenuId === apt.id ? null : apt.id);
+                                                        }}
+                                                    >
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <div className="flex items-center gap-1.5 mb-1.5 capitalize">
+                                                                     <Clock className="w-2.5 h-2.5 opacity-50 text-white" />
+                                                                     <p className="text-[10px] font-black leading-none bg-dark-900/50 px-1.5 py-0.5 rounded text-white shadow-inner">
                                                                         {format(scheduledAt, "HH:mm")}
                                                                     </p>
-                                                                    <p className="font-bold text-[11px] text-white truncate leading-tight mt-1">{apt.client?.name}</p>
-                                                                    <p className="text-[9px] text-zinc-500 truncate mt-0.5 uppercase tracking-tighter font-black opacity-80">
-                                                                        {apt.items?.[0]?.service?.name}
-                                                                    </p>
                                                                 </div>
-                                                                
-                                                                {/* Menu de Ações Rápido no Card */}
-                                                                <button className="p-1 hover:bg-white/10 rounded-lg transition-all">
-                                                                    <MoreVertical className="w-3 h-3 text-zinc-500" />
+                                                                <p className="font-black text-xs text-white truncate leading-tight flex items-center gap-1">
+                                                                    {apt.client?.name}
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                                    {apt.items?.map((item: any, i: number) => (
+                                                                        <span key={i} className="text-[8px] font-bold bg-dark-900/30 px-1.5 py-0.5 rounded uppercase tracking-tighter opacity-70 border border-white/5">
+                                                                            {item.service?.name}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <button className="p-1.5 hover:bg-white/10 rounded-xl transition-all opacity-0 group-hover:opacity-100">
+                                                                <MoreVertical className="w-4 h-4 text-white" />
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Menu Flutuante ao Clicar */}
+                                                        {openMenuId === apt.id && (
+                                                            <div className="absolute top-2 right-10 bg-dark-800 border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 z-50 flex flex-col gap-1 min-w-[140px] animate-in slide-in-from-right-2 duration-200 backdrop-blur-xl">
+                                                                {apt.status === 'SCHEDULED' && (
+                                                                    <button 
+                                                                        onClick={() => { updateStatus(apt.id, 'COMPLETED'); setOpenMenuId(null); }}
+                                                                        className="flex items-center justify-between px-3 py-2 text-[10px] font-black text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all uppercase tracking-widest"
+                                                                    >
+                                                                        Finalizar <CheckCircle className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
+                                                                <button 
+                                                                    onClick={() => handleDelete(apt.id)}
+                                                                    className="flex items-center justify-between px-3 py-2 text-[10px] font-black text-red-400 hover:bg-red-500/10 rounded-xl transition-all uppercase tracking-widest"
+                                                                >
+                                                                    Cancelar <Trash2 className="w-3 h-3" />
                                                                 </button>
                                                             </div>
+                                                        )}
 
-                                                            {/* Menu Flutuante ao Clicar */}
-                                                            {openMenuId === apt.id && (
-                                                                <div className="absolute top-2 right-8 bg-dark-800 border border-white/10 rounded-xl shadow-2xl p-2 z-50 flex flex-col gap-1 min-w-[120px] animate-in fade-in zoom-in duration-200">
-                                                                    {apt.status === 'SCHEDULED' && (
-                                                                        <button 
-                                                                            onClick={() => { updateStatus(apt.id, 'COMPLETED'); setOpenMenuId(null); }}
-                                                                            className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                                                                        >
-                                                                            <CheckCircle className="w-3 h-3" /> Finalizar
-                                                                        </button>
-                                                                    )}
-                                                                    <button 
-                                                                        onClick={() => handleDelete(apt.id)}
-                                                                        className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                                                                    >
-                                                                        <Trash2 className="w-3 h-3" /> Cancelar
-                                                                    </button>
-                                                                </div>
-                                                            )}
-
-                                                            <div className={cn(
-                                                                "absolute bottom-0 left-0 w-full h-1 opacity-50",
-                                                                apt.status === 'SCHEDULED' ? "bg-brand-500" : 
-                                                                apt.status === 'COMPLETED' ? "bg-emerald-500" : "bg-zinc-500"
-                                                            )} />
-                                                        </div>
-                                                    );
-                                                })
-                                        )}
+                                                        {/* Indicador Lateral de Status */}
+                                                        <div className={cn(
+                                                            "absolute left-0 top-0 h-full w-1 opacity-60",
+                                                            getStatusIndicatorColor(apt)
+                                                        )} />
+                                                    </div>
+                                                );
+                                            })
+                                        }
                                     </div>
                                 ))}
 
@@ -315,8 +350,8 @@ export default function AppointmentsPage() {
                                         className="absolute left-0 w-full flex items-center pointer-events-none z-40"
                                         style={{ top: `${currentTimePos}px` }}
                                     >
-                                        <div className="w-3 h-3 rounded-full bg-brand-500 shadow-brand -ml-[6px] border-2 border-white" />
-                                        <div className="flex-1 h-0.5 bg-brand-500 shadow-brand opacity-60" />
+                                        <div className="w-3.5 h-3.5 rounded-full bg-brand-500 shadow-brand -ml-2 border-2 border-white" />
+                                        <div className="flex-1 h-0.5 bg-brand-500 shadow-brand opacity-80" />
                                     </div>
                                 )}
                             </div>
@@ -335,26 +370,19 @@ export default function AppointmentsPage() {
                                 required
                                 value={formData.clientId}
                                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                                className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                                className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all shadow-inner"
                             >
                                 <option value="">Selecione o Cliente</option>
-                                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name} {c.isDefaulter ? "(DEVEDOR)" : c.subscription?.status === 'ACTIVE' ? "(ASSINANTE)" : ""}
+                                    </option>
+                                ))}
                             </select>
                         </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Serviço</label>
-                                <select 
-                                    required
-                                    value={formData.serviceId}
-                                    onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
-                                    className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
-                                >
-                                    <option value="">Selecione o Serviço</option>
-                                    {services.map(s => <option key={s.id} value={s.id}>{s.name} - R$ {s.price}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Barbeiro</label>
                                 <select 
                                     required
@@ -366,21 +394,71 @@ export default function AppointmentsPage() {
                                     {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Início</label>
+                                <input 
+                                    type="time"
+                                    required
+                                    value={formData.time}
+                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                    className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                                />
+                            </div>
                         </div>
+
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Horário</label>
-                            <input 
-                                type="time"
-                                required
-                                value={formData.time}
-                                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
-                            />
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex justify-between">
+                                Serviços Selecionados
+                                <span className="text-zinc-600">Soma automática de tempo e preço</span>
+                            </label>
+                            
+                            {/* Lista de seleção múltipla personalizada */}
+                            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-hide py-1">
+                                {services.map(s => {
+                                    const selected = formData.serviceIds.includes(s.id);
+                                    return (
+                                        <button
+                                            key={s.id}
+                                            type="button"
+                                            onClick={() => toggleService(s.id)}
+                                            className={cn(
+                                                "flex flex-col items-start p-3 rounded-xl border text-left transition-all",
+                                                selected 
+                                                    ? "bg-brand-500/10 border-brand-500 text-white shadow-brand-sm" 
+                                                    : "bg-dark-800 border-white/5 text-zinc-500 hover:border-white/10"
+                                            )}
+                                        >
+                                            <span className="text-xs font-bold truncate w-full">{s.name}</span>
+                                            <div className="flex items-center justify-between w-full mt-1">
+                                                <span className="text-[9px] opacity-70">{s.durationMinutes} min</span>
+                                                <span className="text-[10px] font-black text-brand-400">R$ {s.price}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {formData.serviceIds.length > 0 && (
+                                <div className="mt-4 p-4 rounded-xl bg-dark-900/50 border border-white/5 flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Resumo Total</span>
+                                        <span className="text-xs text-zinc-200 mt-1 font-bold">
+                                            {services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.durationMinutes, 0)} minutos totais
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-lg font-black text-brand-400">
+                                            R$ {services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.price, 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
+
                     <div className="pt-4 flex gap-3">
-                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 text-zinc-400 font-bold hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest text-[10px]">Cancelar</button>
-                        <button type="submit" disabled={loading} className="flex-[2] bg-brand-gradient text-white py-4 px-8 rounded-xl font-black uppercase tracking-widest shadow-brand hover:scale-[1.02] active:scale-95 transition-all text-[11px] flex items-center justify-center gap-2">
+                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 text-zinc-500 font-bold hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest text-[10px]">Cancelar</button>
+                        <button type="submit" disabled={loading || formData.serviceIds.length === 0} className="flex-[2] bg-brand-gradient text-white py-4 px-8 rounded-xl font-black uppercase tracking-widest shadow-brand hover:scale-[1.02] active:scale-95 transition-all text-[11px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale">
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirmar Agendamento</>}
                         </button>
                     </div>

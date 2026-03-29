@@ -176,7 +176,12 @@ export async function getAppointments(date: Date) {
             orderBy: { scheduledAt: 'asc' }
         });
 
-        return appointments;
+        const result = appointments.map((apt: any) => ({
+            ...apt,
+            durationMinutes: apt.items.reduce((acc: number, item: any) => acc + (item.service?.durationMinutes || 0), 0)
+        }));
+
+        return result;
     } catch (error) {
         console.error("Error fetching appointments:", error);
         return [];

@@ -9,7 +9,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen bg-dark-900 overflow-hidden">
+        <div className="flex h-screen w-full bg-dark-900 overflow-hidden">
             {/* Sidebar with mobile Drawer logic */}
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             

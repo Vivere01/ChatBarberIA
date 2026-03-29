@@ -143,6 +143,9 @@ model Store {
   zipCode         String?
   logoUrl         String?
   primaryColor    String    @default("#f97316")
+  colorSubscriber String    @default("#166534")
+  colorRegular    String    @default("#475569")
+  colorDefaulter  String    @default("#991B1B")
   description     String?
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())

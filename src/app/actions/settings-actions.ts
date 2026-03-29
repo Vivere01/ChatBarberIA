@@ -52,3 +52,80 @@ export async function updateGatewaySettings(data: {
         return { error: "Erro ao salvar configurações." };
     }
 }
+
+export async function getStoreSettings() {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
+            return { error: "Não autorizado." };
+        }
+
+        const store = await prisma.store.findFirst({
+            where: { ownerId: (session.user as any).id },
+            include: { businessHours: true }
+        });
+
+        return { success: true, store };
+    } catch (err) {
+        console.error("Action Error [getStoreSettings]:", err);
+        return { error: "Erro ao buscar configurações da loja." };
+    }
+}
+
+export async function updateStoreSettings(data: {
+    primaryColor?: string;
+    colorSubscriber?: string;
+    colorRegular?: string;
+    colorDefaulter?: string;
+    businessHours?: any[];
+}) {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
+            return { error: "Não autorizado." };
+        }
+
+        const ownerId = (session.user as any).id;
+        const store = await prisma.store.findFirst({ where: { ownerId } });
+        if (!store) return { error: "Loja não encontrada." };
+
+        await prisma.store.update({
+            where: { id: store.id },
+            data: {
+                primaryColor: data.primaryColor,
+                colorSubscriber: data.colorSubscriber,
+                colorRegular: data.colorRegular,
+                colorDefaulter: data.colorDefaulter,
+            }
+        });
+
+        // Update business hours if provided (assuming they exist)
+        if (data.businessHours) {
+            for (const bh of data.businessHours) {
+                await prisma.businessHour.upsert({
+                    where: { storeId_dayOfWeek: { storeId: store.id, dayOfWeek: bh.dayOfWeek } },
+                    update: {
+                        isOpen: bh.isOpen,
+                        openTime: bh.openTime,
+                        closeTime: bh.closeTime
+                    },
+                    create: {
+                        storeId: store.id,
+                        dayOfWeek: bh.dayOfWeek,
+                        isOpen: bh.isOpen,
+                        openTime: bh.openTime,
+                        closeTime: bh.closeTime
+                    }
+                });
+            }
+        }
+
+        revalidatePath("/admin/settings");
+        return { success: true };
+    } catch (err) {
+        console.error("Action Error [updateStoreSettings]:", err);
+        return { error: "Erro ao salvar configurações da loja." };
+    }
+}

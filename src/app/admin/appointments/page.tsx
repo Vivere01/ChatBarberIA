@@ -200,26 +200,40 @@ export default function AppointmentsPage() {
                                                     <div 
                                                         key={m} 
                                                         onClick={() => { setFormData({ clientId: "", staffId: member.id, serviceIds: [], time: `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`, date: selectedDate }); setIsModalOpen(true); }} 
-                                                        onDragOver={(e) => e.preventDefault()}
+                                                        onDragOver={(e) => {
+                                                            e.preventDefault();
+                                                            e.currentTarget.classList.add('bg-white/10');
+                                                        }}
+                                                        onDragLeave={(e) => {
+                                                            e.currentTarget.classList.remove('bg-white/10');
+                                                        }}
                                                         onDrop={async (e) => {
                                                             e.preventDefault();
+                                                            e.currentTarget.classList.remove('bg-white/10');
                                                             const aptId = e.dataTransfer.getData("appointmentId");
                                                             if (!aptId) return;
                                                             
-                                                            const targetTime = `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                                                            const [h, mm] = targetTime.split(':').map(Number);
-                                                            const newDate = new Date(selectedDate);
-                                                            newDate.setHours(h, mm, 0, 0);
+                                                            const newDate = new Date(Date.UTC(
+                                                                selectedDate.getUTCFullYear(),
+                                                                selectedDate.getUTCMonth(),
+                                                                selectedDate.getUTCDate(),
+                                                                hour,
+                                                                m,
+                                                                0, 0
+                                                            ));
 
                                                             setLoading(true);
-                                                            await updateAdminAppointment(aptId, {
-                                                                staffId: member.id,
-                                                                scheduledAt: newDate
-                                                            });
-                                                            await loadData();
-                                                            setLoading(false);
+                                                            try {
+                                                                await updateAdminAppointment(aptId, {
+                                                                    staffId: member.id,
+                                                                    scheduledAt: newDate
+                                                                });
+                                                                await loadData();
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
                                                         }}
-                                                        className="h-1/4 w-full cursor-pointer hover:bg-brand-500/[0.03] transition-colors" 
+                                                        className="h-1/4 w-full cursor-pointer hover:bg-brand-500/[0.03] transition-all border-b border-white/[0.01] last:border-0" 
                                                     />
                                                 ))}
                                             </div>

@@ -16,7 +16,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
                 <Topbar onMenuClick={() => setSidebarOpen(true)} />
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-dark-900 relative">
-                    <div className="w-full max-w-[1600px] mx-auto animate-fade-in pb-20 md:pb-6">
+                    <div className="w-full animate-fade-in pb-20 md:pb-6">
                         {children}
                     </div>
                 </main>

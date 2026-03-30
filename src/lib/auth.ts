@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
@@ -9,6 +10,10 @@ export const authOptions: NextAuthOptions = {
         signIn: "/login",
     },
     providers: [
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID || "",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        }),
         CredentialsProvider({
             id: "owner-login",
             name: "Owner",
@@ -103,6 +108,31 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
+        async signIn({ user, account }) {
+            if (account?.provider === "google") {
+                // If logging in via Google, find which table they belong to
+                const owner = await prisma.owner.findUnique({ where: { email: user.email! } });
+                if (owner) {
+                    (user as any).role = "OWNER";
+                    (user as any).id = owner.id;
+                    return true;
+                }
+
+                const staff = await prisma.staff.findFirst({ where: { email: user.email! } });
+                if (staff) {
+                    (user as any).role = staff.role;
+                    (user as any).id = staff.id;
+                    (user as any).storeId = staff.storeId;
+                    return true;
+                }
+
+                // If not found in primary tables, they are a CLIENT
+                // For Google login, the client identity might need context (ownerId)
+                // But for now we just mark them as CLIENT or allow them to continue
+                (user as any).role = "CLIENT";
+            }
+            return true;
+        },
         async jwt({ token, user }) {
             if (user) {
                 token.role = (user as any).role;
@@ -124,4 +154,10 @@ export const authOptions: NextAuthOptions = {
 };
 import { getServerSession } from "next-auth";
 
-export const getAuthSession = () => getServerSession(authOptions);
+export const getAuthSession = () => {
+    try {
+        return getServerSession(authOptions);
+    } catch (e) {
+        return null;
+    }
+};

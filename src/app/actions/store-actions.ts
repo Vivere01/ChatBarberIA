@@ -10,6 +10,9 @@ export async function createStore(data: {
     address?: string;
     phone?: string;
     slug: string;
+    primaryColor?: string;
+    loginBackgroundUrl?: string;
+    brandingFaviconUrl?: string;
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
@@ -35,6 +38,9 @@ export async function updateStore(id: string, data: {
     address?: string;
     phone?: string;
     slug: string;
+    primaryColor?: string;
+    loginBackgroundUrl?: string;
+    brandingFaviconUrl?: string;
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();

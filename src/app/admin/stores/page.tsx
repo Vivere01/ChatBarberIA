@@ -19,7 +19,7 @@ const EMPTY_FORM = {
     description: "",
     primaryColor: "#f97316",
     loginBackgroundUrl: "",
-    brandingFaviconUrl: ""
+    logoUrl: ""
 };
 
 export default function StoresPage() {
@@ -61,7 +61,7 @@ export default function StoresPage() {
             description: store.description || "",
             primaryColor: store.primaryColor || "#f97316",
             loginBackgroundUrl: store.loginBackgroundUrl || "",
-            brandingFaviconUrl: store.brandingFaviconUrl || "",
+            logoUrl: store.logoUrl || "",
         });
         setIsFormOpen(true);
     };
@@ -338,16 +338,17 @@ export default function StoresPage() {
                                 <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest ml-1 italic">* URL de uma imagem de alta resolução</p>
                             </div>
 
-                            {/* Favicon */}
+                            {/* Logo */}
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Ícone da Aba (Favicon)</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Logo da Unidade</label>
                                 <input
                                     type="text"
-                                    value={(formData as any).brandingFaviconUrl || ""}
-                                    onChange={(e) => setFormData({ ...formData, brandingFaviconUrl: e.target.value } as any)}
-                                    placeholder="https://suaimagem.com/favicon.png"
+                                    value={(formData as any).logoUrl || ""}
+                                    onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value } as any)}
+                                    placeholder="https://suaimagem.com/logo.png"
                                     className="w-full bg-dark-700 border border-white/5 rounded-2xl px-5 h-16 text-white placeholder-zinc-600 focus:outline-none font-medium text-xs"
                                 />
+                                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest ml-1 italic">* Insira o link / URL da sua logo</p>
                             </div>
                         </div>
                     </div>

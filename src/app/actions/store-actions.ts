@@ -13,6 +13,7 @@ export async function createStore(data: {
     primaryColor?: string;
     loginBackgroundUrl?: string;
     brandingFaviconUrl?: string;
+    logoUrl?: string;
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
@@ -33,20 +34,35 @@ export async function createStore(data: {
 }
 
 export async function updateStore(id: string, data: {
-    name: string;
+    name?: string;
     description?: string;
     address?: string;
     phone?: string;
-    slug: string;
+    slug?: string;
+    logoUrl?: string;
     primaryColor?: string;
     loginBackgroundUrl?: string;
     brandingFaviconUrl?: string;
+    [key: string]: any;
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
+        // Extract only known Prisma fields to avoid unknown property errors
+        const { name, description, address, phone, slug, logoUrl, primaryColor, loginBackgroundUrl, brandingFaviconUrl } = data;
+        const updateData: Record<string, any> = {};
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (address !== undefined) updateData.address = address;
+        if (phone !== undefined) updateData.phone = phone;
+        if (slug !== undefined) updateData.slug = slug;
+        if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+        if (primaryColor !== undefined) updateData.primaryColor = primaryColor;
+        if (loginBackgroundUrl !== undefined) updateData.loginBackgroundUrl = loginBackgroundUrl;
+        if (brandingFaviconUrl !== undefined) updateData.brandingFaviconUrl = brandingFaviconUrl;
+
         const store = await prisma.store.update({
             where: { id, ownerId },
-            data,
+            data: updateData,
         });
         revalidatePath("/admin/stores");
         return { success: true, store };

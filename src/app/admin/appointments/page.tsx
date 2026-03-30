@@ -285,173 +285,186 @@ export default function AppointmentsPage() {
 
             {/* MODAL REDESENHADO: RESPONSIVO E UI/UX PREMIUM */}
             <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Editar Agendamento" : "Novo Agendamento"}>
-                <div className="w-full max-w-6xl mx-auto space-y-10 py-6">
-                    
-                    {/* LINHA 1: CLIENTE E PROFISSIONAL */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <Section label="CLIENTE">
-                            <div className="flex gap-4">
-                                <select required value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="custom-input flex-1">
-                                    <option value="">Selecione o Cliente</option>
-                                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                                <button type="button" className="h-[60px] w-16 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20 shadow-lg">
-                                    <UserPlus className="w-6 h-6" />
-                                </button>
-                            </div>
-                        </Section>
-                        <Section label="PROFISSIONAL">
-                            <div className="flex gap-4">
-                                <select required value={formData.staffId} onChange={(e) => setFormData({ ...formData, staffId: e.target.value })} className="custom-input flex-1">
-                                    <option value="">Selecione Profissional</option>
-                                    {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                                <div className="h-[60px] w-16 bg-dark-800 border border-white/5 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <User className="w-6 h-6 text-zinc-500" />
-                                </div>
-                            </div>
-                        </Section>
-                    </div>
-
-                    {/* LINHA 2: TEMPO E FILIAL - ALINHAMENTO CORRIGIDO */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                        <Section label="DATA">
-                             <div className="relative">
-                                <input type="date" value={format(formData.date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value + "T12:00:00") })} className="custom-input !px-6" />
-                                <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
-                            </div>
-                        </Section>
-                        <Section label="HORA INÍCIO">
-                            <div className="relative">
-                                <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input !px-6" />
-                                <Clock className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
-                            </div>
-                        </Section>
-                        <Section label="FIM ESTIMADO">
-                            <div className="relative">
-                                {(() => {
-                                    const [h, m] = formData.time.split(':').map(Number);
-                                    const totalDur = services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.durationMinutes, 0);
-                                    const end = new Date();
-                                    end.setHours(h, m + (totalDur || 30), 0, 0);
-                                    return <input type="time" readOnly value={`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`} className="custom-input bg-dark-900 border-dashed opacity-50 cursor-not-allowed !px-6" />;
-                                })()}
-                                <Clock className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
-                            </div>
-                        </Section>
-                        <Section label="LOJA/FILIAL">
-                            <select className="custom-input cursor-not-allowed opacity-50 !px-6" disabled>
-                                <option>ChatBarber Matriz</option>
-                            </select>
-                        </Section>
-                    </div>
-
-                    {/* SERVIÇOS SELECIONADOS (MODELO RECEITA/COMANDA) */}
-                    <Section label="SERVIÇOS E ITENS DA COMANDA">
-                        <div className="bg-dark-950/40 rounded-[32px] border border-white/5 overflow-hidden">
-                            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-                                <div className="flex gap-4 items-center flex-1 max-w-md">
-                                    <select 
-                                        className="h-12 bg-dark-800 border border-white/10 rounded-xl px-4 text-xs font-bold text-zinc-300 flex-1 outline-none focus:border-brand-500"
-                                        onChange={(e) => {
-                                            const id = e.target.value;
-                                            if (id && !formData.serviceIds.includes(id)) {
-                                                setFormData(prev => ({ ...prev, serviceIds: [...prev.serviceIds, id] }));
-                                            }
-                                            e.target.value = "";
-                                        }}
-                                    >
-                                        <option value="">Adicionar novo serviço...</option>
-                                        {services.map(s => <option key={s.id} value={s.id}>{s.name} • R$ {s.price}</option>)}
-                                    </select>
-                                    <button type="button" className="w-12 h-12 bg-brand-500 text-white rounded-xl flex items-center justify-center hover:scale-105 transition-all"><Plus className="w-5 h-5" /></button>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Total da Comanda</p>
-                                    <p className="text-xl font-black text-white">R$ {services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + Number(s.price), 0).toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <table className="w-full text-left">
-                                <thead className="bg-white/5 border-b border-white/5">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Serviço/Produto</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Valor</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Duração</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-right">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/[0.02]">
-                                    {formData.serviceIds.length === 0 ? (
-                                        <tr><td colSpan={4} className="px-6 py-10 text-center text-xs font-bold text-zinc-600 italic">Nenhum serviço adicionado à comanda.</td></tr>
-                                    ) : (
-                                        services.filter(s => formData.serviceIds.includes(s.id)).map(s => (
-                                            <tr key={s.id} className="hover:bg-white/[0.01] transition-colors">
-                                                <td className="px-6 py-4 text-xs font-black text-white uppercase tracking-wider">{s.name}</td>
-                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 text-center">R$ {s.price}</td>
-                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 text-center">{s.durationMinutes} min</td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button onClick={() => setFormData(prev => ({ ...prev, serviceIds: prev.serviceIds.filter(id => id !== s.id) }))} className="p-2 text-zinc-600 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </Section>
-
-                    {/* HISTÓRICO (MODELO TABELA ÚLTIMOS AGENDAMENTOS) */}
-                    {clientHistory.length > 0 && (
-                        <Section label="ÚLTIMOS 3 AGENDAMENTOS DO CLIENTE">
-                             <div className="bg-dark-900/40 rounded-[28px] border border-white/5 overflow-hidden">
-                                <table className="w-full text-left">
-                                    <thead className="bg-white/[0.02] border-b border-white/5">
-                                        <tr>
-                                            <th className="px-6 py-3 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Data</th>
-                                            <th className="px-6 py-3 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Serviços</th>
-                                            <th className="px-6 py-3 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Barbeiro</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/[0.02]">
-                                        {clientHistory.slice(0, 3).map((hist, i) => (
-                                            <tr key={i} className="opacity-60 hover:opacity-100 transition-opacity">
-                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 tabular-nums">{format(new Date(hist.scheduledAt), "dd/MM/yyyy HH:mm")}</td>
-                                                <td className="px-6 py-4 text-xs font-medium text-zinc-500 truncate max-w-[200px]">{hist.items.map((it: any) => it.service.name).join(", ")}</td>
-                                                <td className="px-6 py-4 text-xs font-black text-zinc-300 uppercase tracking-tight">{hist.staff.name}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </Section>
-                    )}
-
-                    {/* AÇÕES DE RODAPÉ (REMODELADAS) */}
-                    <div className="pt-8 border-t border-white/5 flex flex-wrap items-center justify-between gap-4">
-                        <button type="button" onClick={() => { setIsModalOpen(false); setEditingAptId(null); }} className="px-8 h-[60px] text-[10px] font-black uppercase tracking-[2px] text-zinc-500 hover:text-white transition-all">Cancelar</button>
+                <div className="w-full max-w-7xl mx-auto py-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                         
-                        <div className="flex gap-4">
-                            {editingAptId && (
-                                <button type="button" onClick={() => setShowOptions(!showOptions)} className={cn("h-[60px] px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3", showOptions ? "bg-red-500 text-white" : "bg-dark-800 text-zinc-400 border border-white/5 hover:text-white")}>
-                                    {showOptions ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
-                                    {showOptions ? "FECHAR OPÇÕES" : "MAIS AÇÕES"}
-                                </button>
-                            )}
-                            <button type="submit" disabled={loading} onClick={handleSave} className="px-10 h-[60px] bg-brand-gradient text-white rounded-2xl font-black uppercase text-[11px] tracking-[3px] shadow-brand hover:scale-[1.02] active:scale-95 transition-all min-w-[200px]">
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingAptId ? "SALVAR ALTERAÇÕES" : "CONFIRMAR RESERVA")}
-                            </button>
-                        </div>
-                    </div>
+                        {/* COLUNA DA ESQUERDA: AÇÃO E COMANDA (7 colunas) */}
+                        <div className="lg:col-span-8 space-y-10">
+                            
+                            {/* DADOS PRINCIPAIS */}
+                            <div className="bg-white/[0.02] p-8 rounded-[32px] border border-white/5 space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <Section label="CLIENTE">
+                                        <div className="flex gap-3">
+                                            <select required value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="custom-input flex-1 !h-14">
+                                                <option value="">Selecione o Cliente</option>
+                                                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            </select>
+                                            <button type="button" className="w-14 h-14 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20"><UserPlus className="w-5 h-5" /></button>
+                                        </div>
+                                    </Section>
+                                    <Section label="PROFISSIONAL">
+                                        <div className="flex gap-3">
+                                            <select required value={formData.staffId} onChange={(e) => setFormData({ ...formData, staffId: e.target.value })} className="custom-input flex-1 !h-14">
+                                                <option value="">Selecione Profissional</option>
+                                                {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                            </select>
+                                            <div className="w-14 h-14 bg-dark-800 border border-white/5 rounded-2xl flex items-center justify-center"><User className="w-5 h-5 text-zinc-600" /></div>
+                                        </div>
+                                    </Section>
+                                </div>
 
-                    {/* MENU DE OPÇÕES COMPLEMENTARES (ESTILO FLOATING) */}
-                    {editingAptId && showOptions && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 bg-dark-950/80 backdrop-blur-xl border border-white/10 rounded-[32px] animate-in slide-in-from-bottom-4 duration-300">
-                            <QuickAction label="FINALIZAR" icon={CheckCircle} color="emerald" onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData).then(() => setIsModalOpen(false))} />
-                            <QuickAction label="FALTOU" icon={XCircle} color="orange" onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData).then(() => setIsModalOpen(false))} />
-                            <QuickAction label="WHATSAPP" icon={MessageCircle} color="blue" onClick={() => {}} />
-                            <QuickAction label="EXCLUIR" icon={Trash2} color="red" onClick={() => deleteAppointment(editingAptId).then(loadData).then(() => setIsModalOpen(false))} />
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                    <Section label="DATA">
+                                        <div className="relative">
+                                            <input type="date" value={format(formData.date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value + "T12:00:00") })} className="custom-input !h-14 !px-4 text-xs" />
+                                            <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                        </div>
+                                    </Section>
+                                    <Section label="INÍCIO">
+                                        <div className="relative">
+                                            <input type="time" required value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="custom-input !h-14 !px-4 text-lg font-black tracking-widest text-brand-400" />
+                                            <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                        </div>
+                                    </Section>
+                                    <Section label="FIM ESTIMADO">
+                                        <div className="relative">
+                                            {(() => {
+                                                const [h, m] = formData.time.split(':').map(Number);
+                                                const totalDur = services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.durationMinutes, 0);
+                                                const end = new Date();
+                                                end.setHours(h, m + (totalDur || 30), 0, 0);
+                                                return <input type="time" readOnly value={`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`} className="custom-input !h-14 !px-4 text-lg font-bold text-zinc-600 bg-dark-900/50 border-dashed opacity-50" />;
+                                            })()}
+                                            <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                        </div>
+                                    </Section>
+                                </div>
+                            </div>
+
+                            {/* TABELA DE SERVIÇOS (CENTRALIZADA) */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between px-2">
+                                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[4px]">Itens da Comanda</h3>
+                                    <div className="text-right">
+                                        <span className="text-[9px] font-black text-zinc-600 block uppercase tracking-widest">Total Acumulado</span>
+                                        <span className="text-2xl font-black text-white">R$ {services.filter(s => formData.serviceIds.includes(s.id)).reduce((acc, s) => acc + Number(s.price), 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="glass-card border border-white/5 overflow-hidden rounded-[32px]">
+                                    <div className="p-4 bg-white/[0.02] border-b border-white/5 flex gap-4">
+                                        <select 
+                                            className="custom-input !h-12 !rounded-xl !px-4 text-xs flex-1"
+                                            onChange={(e) => {
+                                                const id = e.target.value;
+                                                if (id && !formData.serviceIds.includes(id)) {
+                                                    setFormData(prev => ({ ...prev, serviceIds: [...prev.serviceIds, id] }));
+                                                }
+                                                e.target.value = "";
+                                            }}
+                                        >
+                                            <option value="">Adicionar novo serviço ou produto...</option>
+                                            {services.map(s => <option key={s.id} value={s.id}>{s.name} • R$ {s.price}</option>)}
+                                        </select>
+                                        <button type="button" className="w-12 h-12 bg-brand-500 text-white rounded-xl shadow-lg shadow-brand/20 flex items-center justify-center hover:scale-105 transition-all"><Plus className="w-5 h-5" /></button>
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto scrollbar-hide">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-white/5 border-b border-white/5 sticky top-0 z-10 backdrop-blur-md">
+                                                <tr>
+                                                    <th className="px-8 py-4 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Serviço</th>
+                                                    <th className="px-8 py-4 text-[9px] font-black text-zinc-600 uppercase tracking-widest text-center">Valor</th>
+                                                    <th className="px-8 py-4 text-[9px] font-black text-zinc-600 uppercase tracking-widest text-center">Duração</th>
+                                                    <th className="px-8 py-4 text-right"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/[0.02]">
+                                                {formData.serviceIds.length === 0 ? (
+                                                    <tr><td colSpan={4} className="px-8 py-12 text-center text-xs font-medium text-zinc-600 italic">Lista de serviços vazia.</td></tr>
+                                                ) : (
+                                                    services.filter(s => formData.serviceIds.includes(s.id)).map(s => (
+                                                        <tr key={s.id} className="group hover:bg-white/[0.01]">
+                                                            <td className="px-8 py-5">
+                                                                <span className="text-xs font-black text-white uppercase tracking-wider block">{s.name}</span>
+                                                                <span className="text-[9px] text-zinc-600 uppercase font-bold mt-0.5">Procedimento Confirmado</span>
+                                                            </td>
+                                                            <td className="px-8 py-5 text-center text-xs font-black text-brand-400">R$ {s.price}</td>
+                                                            <td className="px-8 py-5 text-center text-xs font-bold text-zinc-500">{s.durationMinutes}m</td>
+                                                            <td className="px-8 py-5 text-right">
+                                                                <button onClick={() => setFormData(prev => ({ ...prev, serviceIds: prev.serviceIds.filter(id => id !== s.id) }))} className="p-2 text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    )}
+
+                        {/* COLUNA DA DIREITA: DOSSIÊ E AÇÕES (4 colunas) */}
+                        <div className="lg:col-span-4 flex flex-col space-y-10">
+                            
+                            {/* DOSSIÊ ANALÍTICO */}
+                            <div className="flex-1 bg-dark-950/40 rounded-[40px] border border-white/5 p-8 relative overflow-hidden flex flex-col">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/5 blur-[100px] rounded-full" />
+                                
+                                <div className="flex items-center gap-4 mb-10 relative">
+                                    <div className="w-12 h-12 bg-dark-900 rounded-2xl flex items-center justify-center border border-white/10 shadow-xl"><History className="w-6 h-6 text-brand-400" /></div>
+                                    <div>
+                                        <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none">Dossiê do Cliente</h3>
+                                        <p className="text-[9px] text-zinc-600 uppercase font-black mt-1.5 tracking-tight">Análise de histórico recente</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6 flex-1">
+                                    {clientHistory.length > 0 ? (
+                                        clientHistory.slice(0, 4).map((hist, i) => (
+                                            <div key={i} className="group cursor-default">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] font-black text-zinc-500 tabular-nums">{format(new Date(hist.scheduledAt), "dd/MM/yyyy HH:mm")}</span>
+                                                    <span className="text-[9px] font-black text-brand-500/60 uppercase">{hist.staff.name}</span>
+                                                </div>
+                                                <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/5 group-hover:bg-white/[0.03] transition-all">
+                                                    <p className="text-[11px] font-bold text-zinc-400 leading-relaxed uppercase">{hist.items.map((it: any) => it.service.name).join(" + ")}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="h-40 flex flex-col items-center justify-center border border-dashed border-white/5 rounded-[32px] opacity-20">
+                                            <Info className="w-8 h-8 mb-4" />
+                                            <p className="text-[9px] font-black uppercase tracking-widest">Sem registros prévios</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-10 pt-8 border-t border-white/5 space-y-4">
+                                    <Section label="OBSERVAÇÕES INTERNAS">
+                                        <textarea className="w-full bg-dark-900/50 border border-white/5 rounded-2xl p-4 text-xs text-zinc-400 outline-none focus:border-brand-500/30 transition-all min-h-[100px] scrollbar-hide" placeholder="Notas sobre preferências do cliente..." />
+                                    </Section>
+                                </div>
+                            </div>
+
+                            {/* AÇÕES FIXAS NO RODAPÉ DO DOSSIÊ */}
+                            <div className="space-y-4">
+                                {editingAptId && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-4 h-4" /> FINALIZAR</button>
+                                        <button onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all"><XCircle className="w-4 h-4" /> FALTOU/CAN</button>
+                                    </div>
+                                )}
+                                <div className="flex gap-4">
+                                    <button onClick={() => { setIsModalOpen(false); setEditingAptId(null); }} className="px-6 h-16 text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">Cancelar</button>
+                                    <button type="submit" disabled={loading} onClick={handleSave} className="flex-1 h-16 bg-brand-gradient text-white rounded-[24px] font-black uppercase text-[11px] tracking-[3px] shadow-brand hover:scale-[1.02] active:scale-95 transition-all">
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingAptId ? "SALVAR ALTERAÇÕES" : "CONFIRMAR RESERVA")}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </Modal>
 

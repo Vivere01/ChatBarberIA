@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from "react";
 import AdminShell from "@/components/admin/admin-shell";
-import { 
-    Plus, TrendingDown, MoreVertical, 
-    Trash2, Edit2, Calendar, 
+import {
+    Plus, TrendingDown, MoreVertical,
+    Trash2, Edit2, Calendar,
     DollarSign, Loader2, Search,
     Filter, X
 } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Modal } from "@/components/ui/modal";
-import { 
-    getCosts, 
-    createCost, 
-    updateCost, 
-    deleteCost 
+import {
+    getCosts,
+    createCost,
+    updateCost,
+    deleteCost
 } from "@/app/actions/cost-actions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -28,7 +28,7 @@ export default function CostsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCost, setEditingCost] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState("");
-    
+
     // Form State
     const [formData, setFormData] = useState({
         name: "",
@@ -57,28 +57,32 @@ export default function CostsPage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setIsSubmitting(true);
-        
+
         try {
             const payload = {
                 ...formData,
-                amount: parseFloat(formData.amount),
-                dueDay: formData.dueDay ? parseInt(formData.dueDay) : null
+                amount: String(formData.amount),
+                dueDay: formData.dueDay ? parseInt(String(formData.dueDay)) : null
             };
 
+            let result;
             if (editingCost) {
-                await updateCost(editingCost.id, payload);
-                toast.success("Custo atualizado com sucesso");
+                result = await updateCost(editingCost.id, payload);
             } else {
-                await createCost(payload);
-                toast.success("Custo lançado com sucesso");
+                result = await createCost(payload);
             }
-            
-            setIsModalOpen(false);
-            setEditingCost(null);
-            resetForm();
-            loadCosts();
-        } catch (error) {
-            toast.error("Erro ao salvar custo");
+
+            if (result?.success) {
+                toast.success(editingCost ? "Custo atualizado com sucesso" : "Custo lançado com sucesso");
+                setIsModalOpen(false);
+                setEditingCost(null);
+                resetForm();
+                loadCosts();
+            } else {
+                toast.error(result?.error || "Erro ao salvar custo. Verifique os dados.");
+            }
+        } catch (error: any) {
+            toast.error(error?.message || "Erro inesperado ao salvar custo");
         } finally {
             setIsSubmitting(false);
         }
@@ -86,7 +90,7 @@ export default function CostsPage() {
 
     async function handleDelete(id: string) {
         if (!confirm("Tem certeza que deseja excluir este custo?")) return;
-        
+
         try {
             await deleteCost(id);
             toast.success("Custo excluído");
@@ -118,7 +122,7 @@ export default function CostsPage() {
         setIsModalOpen(true);
     }
 
-    const filteredCosts = costs.filter(c => 
+    const filteredCosts = costs.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -134,7 +138,7 @@ export default function CostsPage() {
                         <h1 className="font-display text-3xl font-bold tracking-tight">Gestão de Custos</h1>
                         <p className="text-zinc-500 text-sm mt-1 uppercase font-black tracking-widest opacity-60">Financeiro & Despesas Mensais</p>
                     </div>
-                    <button 
+                    <button
                         onClick={() => {
                             setEditingCost(null);
                             resetForm();
@@ -149,21 +153,21 @@ export default function CostsPage() {
 
                 {/* Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <MetricCard 
-                        label="Total em Despesas" 
-                        value={totalFixed + totalVariable} 
+                    <MetricCard
+                        label="Total em Despesas"
+                        value={totalFixed + totalVariable}
                         color="orange"
                         icon={DollarSign}
                     />
-                    <MetricCard 
-                        label="Custos Fixos" 
-                        value={totalFixed} 
+                    <MetricCard
+                        label="Custos Fixos"
+                        value={totalFixed}
                         color="zinc"
                         icon={Calendar}
                     />
-                    <MetricCard 
-                        label="Custos Variáveis" 
-                        value={totalVariable} 
+                    <MetricCard
+                        label="Custos Variáveis"
+                        value={totalVariable}
                         color="zinc"
                         icon={TrendingDown}
                     />
@@ -173,9 +177,9 @@ export default function CostsPage() {
                 <div className="bg-dark-900/50 p-4 border border-white/5 rounded-[32px] flex flex-col md:flex-row gap-4 items-center">
                     <div className="relative flex-1 w-full">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600" />
-                        <input 
-                            type="text" 
-                            placeholder="Buscar custo pelo nome (ex: Aluguel, Luz...)" 
+                        <input
+                            type="text"
+                            placeholder="Buscar custo pelo nome (ex: Aluguel, Luz...)"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full h-14 bg-dark-950/50 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-medium focus:border-brand-500/50 outline-none transition-all"
@@ -241,13 +245,13 @@ export default function CostsPage() {
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button 
+                                                <button
                                                     onClick={() => handleEdit(cost)}
                                                     className="p-2 text-zinc-500 hover:text-white transition-colors"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => handleDelete(cost.id)}
                                                     className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
                                                 >
@@ -264,26 +268,26 @@ export default function CostsPage() {
             </div>
 
             {/* Modal de Lançamento */}
-            <Modal 
-                isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(false)} 
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
                 title={editingCost ? "Editar Custo" : "Lançar Custo"}
                 maxWidth="2xl"
             >
                 <form onSubmit={handleSubmit} className="space-y-8 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <SectionForm label="NOME DO CUSTO">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="Ex: Aluguel, Energia, Materiais..."
-                                className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl px-5 text-sm font-medium focus:border-brand-500/50 outline-none transition-all" 
+                                className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl px-5 text-sm font-medium focus:border-brand-500/50 outline-none transition-all"
                             />
                         </SectionForm>
                         <SectionForm label="TIPO">
-                            <select 
+                            <select
                                 value={formData.type}
                                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                                 className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl px-5 text-sm font-black uppercase tracking-widest outline-none focus:border-brand-500/50 transition-all cursor-pointer"
@@ -296,37 +300,37 @@ export default function CostsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <SectionForm label="VALOR (R$)">
-                             <div className="relative">
+                            <div className="relative">
                                 <DollarSign className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600" />
-                                <input 
-                                    type="number" 
-                                    step="0.01"
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
                                     required
                                     value={formData.amount}
                                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                                     placeholder="0,00"
-                                    className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl pl-12 pr-5 text-sm font-black tabular-nums focus:border-brand-500/50 outline-none transition-all" 
+                                    className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl pl-12 pr-5 text-sm font-black tabular-nums focus:border-brand-500/50 outline-none transition-all"
                                 />
                             </div>
                         </SectionForm>
                         <SectionForm label="DIA DO VENCIMENTO">
                             <div className="relative">
                                 <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600" />
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     min="1"
                                     max="31"
                                     value={formData.dueDay}
                                     onChange={(e) => setFormData({ ...formData, dueDay: e.target.value })}
                                     placeholder="Dia 1 a 31"
-                                    className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl pl-12 pr-5 text-sm font-medium focus:border-brand-500/50 outline-none transition-all" 
+                                    className="w-full h-14 bg-dark-900 border border-white/5 rounded-2xl pl-12 pr-5 text-sm font-medium focus:border-brand-500/50 outline-none transition-all"
                                 />
                             </div>
                         </SectionForm>
                     </div>
 
                     <SectionForm label="NOTAS ADICIONAIS">
-                        <textarea 
+                        <textarea
                             value={formData.notes}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                             placeholder="Descreva detalhes desta despesa..."
@@ -335,14 +339,14 @@ export default function CostsPage() {
                     </SectionForm>
 
                     <div className="flex gap-4 pt-4">
-                        <button 
+                        <button
                             type="button"
                             onClick={() => setIsModalOpen(false)}
                             className="flex-1 h-16 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all"
                         >
                             Cancelar
                         </button>
-                        <button 
+                        <button
                             type="submit"
                             disabled={isSubmitting}
                             className="flex-[2] h-16 bg-brand-gradient text-white rounded-2xl font-black uppercase text-xs tracking-[3px] shadow-brand/20 shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"

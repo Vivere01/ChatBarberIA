@@ -3,7 +3,7 @@
 import AdminShell from "@/components/admin/admin-shell";
 import {
     Plus, Store, Loader2, Save, MapPin, Globe, Phone, FileText,
-    Trash2, Edit3, ExternalLink, Check, AlertTriangle
+    Trash2, Edit3, ExternalLink, Check, AlertTriangle, Image as ImageIcon, Upload
 } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { useState, useEffect } from "react";
@@ -326,30 +326,62 @@ export default function StoresPage() {
                             </div>
 
                             {/* Background Login */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Imagem de Fundo (Login)</label>
-                                <input
-                                    type="text"
-                                    value={(formData as any).loginBackgroundUrl || ""}
-                                    onChange={(e) => setFormData({ ...formData, loginBackgroundUrl: e.target.value } as any)}
-                                    placeholder="https://suaimagem.com/fundo.jpg"
-                                    className="w-full bg-dark-700 border border-white/5 rounded-2xl px-5 h-16 text-white placeholder-zinc-600 focus:outline-none font-medium text-xs tabular-nums"
-                                />
-                                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest ml-1 italic">* URL de uma imagem de alta resolução</p>
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Imagem de Fundo (Login)</label>
+                                    <div className="aspect-video w-full rounded-2xl bg-dark-700 border border-white/5 relative overflow-hidden group transition-all hover:border-brand-500/50 flex shrink-0">
+                                        {(formData as any).loginBackgroundUrl ? (
+                                            <img src={(formData as any).loginBackgroundUrl} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600">
+                                                <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Enviar Imagem</span>
+                                            </div>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => setFormData({ ...formData, loginBackgroundUrl: reader.result as string } as any);
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }} 
+                                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                                        />
+                                    </div>
+                                    <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest ml-1 italic">* Papel de parede da tela de login do cliente</p>
+                                </div>
 
                             {/* Logo */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Logo da Unidade</label>
-                                <input
-                                    type="text"
-                                    value={(formData as any).logoUrl || ""}
-                                    onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value } as any)}
-                                    placeholder="https://suaimagem.com/logo.png"
-                                    className="w-full bg-dark-700 border border-white/5 rounded-2xl px-5 h-16 text-white placeholder-zinc-600 focus:outline-none font-medium text-xs"
-                                />
-                                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest ml-1 italic">* Insira o link / URL da sua logo</p>
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Logo da Unidade</label>
+                                    <div className="w-full h-32 rounded-2xl bg-dark-700 border border-white/5 relative overflow-hidden group transition-all hover:border-brand-500/50 flex shrink-0">
+                                        {(formData as any).logoUrl ? (
+                                            <img src={(formData as any).logoUrl} className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600">
+                                                <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Enviar Logo</span>
+                                            </div>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => setFormData({ ...formData, logoUrl: reader.result as string } as any);
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }} 
+                                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                                        />
+                                    </div>
+                                    <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest ml-1 italic">* O logotipo da unidade (fundo transparente sugerido)</p>
+                                </div>
                         </div>
                     </div>
 

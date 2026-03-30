@@ -284,8 +284,8 @@ export default function AppointmentsPage() {
             </div>
 
             {/* MODAL REDESENHADO: RESPONSIVO E UI/UX PREMIUM */}
-            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Editar Agendamento" : "Novo Agendamento"}>
-                <div className="w-full max-w-7xl mx-auto py-4">
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingAptId(null); }} title={editingAptId ? "Editar Agendamento" : "Novo Agendamento"} maxWidth="7xl">
+                <div className="w-full space-y-10">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                         
                         {/* COLUNA DA ESQUERDA: AÇÃO E COMANDA (7 colunas) */}

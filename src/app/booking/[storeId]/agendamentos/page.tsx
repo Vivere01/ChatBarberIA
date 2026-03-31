@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Calendar, Clock, User, Scissors, ChevronRight, Loader2, CalendarX, History as HistoryIcon, MapPin } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { getClientAppointments } from "@/app/actions/appointment-actions";
+import { getClientAppointments, cancelClientAppointment } from "@/app/actions/appointment-actions";
 import { getClientWaitlist } from "@/app/actions/waitlist-actions";
 
 const statusConfig: Record<string, { label: string; class: string }> = {
@@ -22,24 +22,38 @@ export default function ClientAppointmentsPage() {
     const [waitlist, setWaitlist] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [apptData, waitData] = await Promise.all([
+                getClientAppointments(storeId),
+                getClientWaitlist(storeId)
+            ]);
+            setAppointments(apptData || []);
+            setWaitlist(waitData || []);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const [apptData, waitData] = await Promise.all([
-                    getClientAppointments(storeId),
-                    getClientWaitlist(storeId)
-                ]);
-                setAppointments(apptData || []);
-                setWaitlist(waitData || []);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadData();
     }, [storeId]);
+
+    const handleCancel = async (id: string) => {
+        if (confirm("Deseja realmente cancelar este agendamento?")) {
+            setLoading(true);
+            const res = await cancelClientAppointment(id);
+            if (res.success) {
+                await loadData();
+            } else {
+                alert(res.error || "Erro ao cancelar.");
+                setLoading(false);
+            }
+        }
+    };
 
     if (loading) {
         return (
@@ -174,7 +188,7 @@ export default function ClientAppointmentsPage() {
                                         <div>
                                             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Horário</p>
                                             <p className="text-xs font-bold text-zinc-900">
-                                                {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                {String(date.getUTCHours()).padStart(2, '0')}:{String(date.getUTCMinutes()).padStart(2, '0')}
                                             </p>
                                         </div>
                                     </div>
@@ -186,9 +200,19 @@ export default function ClientAppointmentsPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total</span>
                                         <span className="text-sm font-black text-zinc-900 ml-1">R$ {apt.totalAmount.toFixed(2)}</span>
                                     </div>
-                                    <button className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-orange-600 hover:gap-2 transition-all">
-                                        Ver Detalhes <ChevronRight className="w-3.5 h-3.5" />
-                                    </button>
+                                    <div className="flex gap-4">
+                                        {(apt.status === 'SCHEDULED' || apt.status === 'CONFIRMED') && (
+                                            <button 
+                                                onClick={() => handleCancel(apt.id)}
+                                                className="text-[9px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                        <button className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-orange-600 hover:gap-2 transition-all">
+                                            Ver Detalhes <ChevronRight className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );

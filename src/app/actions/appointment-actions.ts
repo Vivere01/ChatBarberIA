@@ -41,21 +41,32 @@ export async function createAppointment(data: {
         }
         const clientId = (session.user as any).id;
 
-        const services = await prisma.service.findMany({ 
-            where: { id: { in: data.serviceIds } } 
+        const services = await prisma.service.findMany({
+            where: { id: { in: data.serviceIds } }
         });
-        
+
         if (services.length === 0) return { error: "Nenhum serviço selecionado." };
 
         const totalDuration = services.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
         const totalAmount = services.reduce((acc, s) => acc + s.price, 0);
+
+        // Garantir que a data seja salva em UTC para evitar drift de fuso horário
+        const baseDate = new Date(data.scheduledAt);
+        const scheduledAtUTC = new Date(Date.UTC(
+            baseDate.getFullYear(),
+            baseDate.getMonth(),
+            baseDate.getDate(),
+            baseDate.getHours(),
+            baseDate.getMinutes(),
+            0, 0
+        ));
 
         const appointment = await prisma.appointment.create({
             data: {
                 storeId: data.storeId,
                 clientId,
                 staffId: data.staffId,
-                scheduledAt: data.scheduledAt,
+                scheduledAt: scheduledAtUTC,
                 durationMinutes: totalDuration,
                 totalAmount: totalAmount,
                 status: "SCHEDULED",
@@ -70,11 +81,41 @@ export async function createAppointment(data: {
             }
         });
 
-        revalidatePath("/booking/[storeId]/agendamentos", "page");
         return { success: true, appointment };
     } catch (error: any) {
         console.error("Error creating appointment:", error);
         return { error: "Erro ao realizar agendamento." };
+    }
+}
+
+export async function cancelClientAppointment(appointmentId: string) {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== "CLIENT") {
+            return { error: "Acesso negado." };
+        }
+        const clientId = (session.user as any).id;
+
+        // Verificar se o agendamento pertence a este cliente antes de cancelar
+        const apt = await prisma.appointment.findUnique({
+            where: { id: appointmentId }
+        });
+
+        if (!apt || apt.clientId !== clientId) {
+            return { error: "Agendamento não encontrado ou permissão negada." };
+        }
+
+        await prisma.appointment.update({
+            where: { id: appointmentId },
+            data: { status: "CANCELLED" }
+        });
+
+        revalidatePath("/booking/[storeId]/agendamentos", "page");
+        return { success: true };
+    } catch (error) {
+        console.error("Error cancelling appointment:", error);
+        return { error: "Erro ao cancelar agendamento." };
     }
 }
 
@@ -93,13 +134,13 @@ export async function createAdminAppointment(data: {
 
         const [hours, minutes] = data.time.split(':').map(Number);
         const baseDate = new Date(data.date);
-        
+
         // Mantendo o Timezone Shield
         const scheduledAt = new Date(Date.UTC(
             baseDate.getUTCFullYear(),
             baseDate.getUTCMonth(),
             baseDate.getUTCDate(),
-            hours, 
+            hours,
             minutes,
             0, 0
         ));
@@ -142,11 +183,11 @@ export async function createAdminAppointment(data: {
 export async function getAppointments(date: Date) {
     try {
         const ownerId = await getEffectiveOwnerId();
-        
+
         const start = new Date(date);
-        start.setUTCHours(0,0,0,0);
+        start.setUTCHours(0, 0, 0, 0);
         const end = new Date(date);
-        end.setUTCHours(23,59,59,999);
+        end.setUTCHours(23, 59, 59, 999);
 
         const appointments = await prisma.appointment.findMany({
             where: {
@@ -157,14 +198,14 @@ export async function getAppointments(date: Date) {
                 }
             },
             include: {
-                client: { 
-                    select: { 
-                        id: true, 
-                        name: true, 
-                        phone: true, 
+                client: {
+                    select: {
+                        id: true,
+                        name: true,
+                        phone: true,
                         isDefaulter: true,
                         subscription: { select: { status: true } }
-                    } 
+                    }
                 },
                 staff: { select: { id: true, name: true, avatarUrl: true } },
                 items: {
@@ -241,7 +282,7 @@ export async function updateAdminAppointment(id: string, data: {
         if (data.status) updateData.status = data.status;
         if (data.staffId) updateData.staffId = data.staffId;
         if (data.scheduledAt) updateData.scheduledAt = data.scheduledAt;
-        
+
         if (data.time && data.date) {
             const [hours, minutes] = data.time.split(':').map(Number);
             const baseDate = new Date(data.date);
@@ -249,14 +290,14 @@ export async function updateAdminAppointment(id: string, data: {
                 baseDate.getUTCFullYear(),
                 baseDate.getUTCMonth(),
                 baseDate.getUTCDate(),
-                hours, 
+                hours,
                 minutes,
                 0, 0
             ));
         }
 
         // If serviceIds change, we need to update items (complex logic, for now keep same items or implement full sync)
-        
+
         await prisma.appointment.update({
             where: { id },
             data: updateData

@@ -55,6 +55,14 @@ export default function AppointmentsPage() {
         loadData();
     }, [selectedDate]);
 
+    // Auto-refresh every 30 seconds to see client bookings automatically
+    useEffect(() => {
+        const refreshInterval = setInterval(() => {
+            loadData();
+        }, 30000); // 30 seconds
+        return () => clearInterval(refreshInterval);
+    }, [selectedDate]);
+
     useEffect(() => {
         if (formData.clientId) {
             getClientHistory(formData.clientId).then(setClientHistory);
@@ -456,9 +464,30 @@ export default function AppointmentsPage() {
                             {/* AÇÕES FIXAS NO RODAPÉ DO DOSSIÊ */}
                             <div className="space-y-4">
                                 {editingAptId && (
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-4 h-4" /> FINALIZAR</button>
-                                        <button onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all"><XCircle className="w-4 h-4" /> FALTOU/CAN</button>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-4 h-4" /> FINALIZAR</button>
+                                            <button onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all"><XCircle className="w-4 h-4" /> FALTOU/CAN</button>
+                                        </div>
+                                        <button 
+                                            onClick={async () => {
+                                                if (confirm("Tem certeza que deseja EXCLUIR este agendamento? Esta ação é irreversível.")) {
+                                                    setLoading(true);
+                                                    const res = await deleteAppointment(editingAptId);
+                                                    if (res.success) {
+                                                        await loadData();
+                                                        setIsModalOpen(false);
+                                                        setEditingAptId(null);
+                                                    } else {
+                                                        alert("Erro ao excluir agendamento.");
+                                                    }
+                                                    setLoading(false);
+                                                }
+                                            }} 
+                                            className="w-full flex items-center justify-center gap-2 h-14 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                        >
+                                            <Trash2 className="w-4 h-4" /> EXCLUIR AGENDAMENTO
+                                        </button>
                                     </div>
                                 )}
                                 <div className="flex gap-4">

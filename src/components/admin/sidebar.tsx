@@ -56,12 +56,6 @@ const navGroups = [
         ],
     },
     {
-        label: "Avaliações",
-        items: [
-            { href: "/admin/nps", icon: Star, label: "NPS" },
-        ],
-    },
-    {
         label: "Configurações",
         items: [
             { href: "/admin/stores", icon: Store, label: "Lojas" },

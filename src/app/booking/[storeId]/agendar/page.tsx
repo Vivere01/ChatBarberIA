@@ -19,6 +19,7 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
     const storeId = params.storeId;
     const [isLoading, setIsLoading] = useState(true);
     const [store, setStore] = useState<any>(null);
+    const [storeColor, setStoreColor] = useState("#ea580c");
     const [branches, setBranches] = useState<any[]>([]);
     
     const [selection, setSelection] = useState({
@@ -44,6 +45,7 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
             const storeData = await getStoreForBooking(storeId) as any;
             if (storeData) {
                 setStore(storeData);
+                setStoreColor(storeData.primaryColor || "#ea580c");
                 setSelection(prev => ({ ...prev, branch: storeData }));
                 
                 // Fetch other branches
@@ -197,9 +199,11 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                 <div className={cn(
                                     "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
                                     isSelected
-                                        ? "bg-orange-600 text-white shadow-lg shadow-orange-600/20 rotate-3" 
+                                        ? "text-white shadow-lg rotate-3" 
                                         : "bg-white text-zinc-400 border border-zinc-100"
-                                )}>
+                                )}
+                                style={isSelected ? { backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` } : undefined}
+                                >
                                     <s.icon className="w-6 h-6" />
                                 </div>
                                 <div>
@@ -222,7 +226,8 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                 <button
                     onClick={handleBooking}
                     disabled={!selection.staff || selection.services.length === 0 || !selection.date || !selection.time || bookingLoading}
-                    className="w-full h-16 bg-orange-600 disabled:bg-zinc-200 disabled:text-zinc-400 text-white font-black uppercase tracking-widest rounded-2xl shadow-2xl shadow-orange-600/20 active:scale-95 transition-all text-xs flex items-center justify-center gap-3"
+                    className="w-full h-16 disabled:bg-zinc-200 disabled:text-zinc-400 text-white font-black uppercase tracking-widest rounded-2xl shadow-2xl active:scale-95 transition-all text-xs flex items-center justify-center gap-3"
+                    style={(!selection.staff || selection.services.length === 0 || !selection.date || !selection.time || bookingLoading) ? undefined : { backgroundColor: storeColor, boxShadow: `0 25px 50px -12px ${storeColor}4D` }}
                 >
                     {bookingLoading ? (
                         <>
@@ -246,8 +251,9 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                 onClick={() => setSelection({ ...selection, date: d.full })}
                                 className={cn(
                                     "flex flex-col items-center justify-center min-w-[70px] h-24 rounded-2xl border transition-all",
-                                    selection.date === d.full ? "bg-orange-600 border-orange-600 text-white shadow-lg" : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
+                                    selection.date === d.full ? "text-white shadow-lg" : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
                                 )}
+                                style={selection.date === d.full ? { backgroundColor: storeColor, borderColor: storeColor } : undefined}
                             >
                                 <span className="text-[10px] font-black uppercase opacity-60 mb-1">{d.weekday}</span>
                                 <span className="text-xl font-black">{d.day}</span>
@@ -269,8 +275,9 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                         }}
                                         className={cn(
                                             "h-12 flex items-center justify-center rounded-xl border text-sm font-bold transition-all",
-                                            selection.time === t ? "bg-orange-600 border-orange-600 text-white" : "bg-white border-zinc-100 text-zinc-900 hover:border-zinc-200"
+                                            selection.time === t ? "text-white" : "bg-white border-zinc-100 text-zinc-900 hover:border-zinc-200"
                                         )}
+                                        style={selection.time === t ? { backgroundColor: storeColor, borderColor: storeColor } : undefined}
                                     >
                                         {t}
                                     </button>
@@ -342,7 +349,10 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                             )}
                         >
                             <div className="flex items-center gap-4 text-left font-bold text-zinc-900">
-                                <div className="w-12 h-12 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-md">
+                                <div 
+                                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md"
+                                    style={{ backgroundColor: storeColor }}
+                                >
                                     {branch.logoUrl ? (
                                         <img src={branch.logoUrl} alt={branch.name} className="w-full h-full object-cover rounded-xl" />
                                     ) : (
@@ -355,7 +365,7 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                 </div>
                             </div>
                             {selection.branch?.id === branch.id && (
-                                <div className="w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center text-white">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: storeColor }}>
                                     <Check className="w-4 h-4" />
                                 </div>
                             )}
@@ -386,8 +396,8 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                     <div className="w-full h-full bg-zinc-100 flex items-center justify-center"><User className="w-10 h-10 text-zinc-300" /></div>
                                 )}
                                 {selection.staff?.id === staff.id && (
-                                    <div className="absolute inset-0 bg-orange-600/20 flex items-center justify-center backdrop-blur-[1px]">
-                                        <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                                    <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[1px]" style={{ backgroundColor: `${storeColor}33` }}>
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: storeColor }}>
                                             <Check className="w-4 h-4" />
                                         </div>
                                     </div>
@@ -412,8 +422,8 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                         <div className="w-20 h-20 rounded-2xl bg-zinc-100 flex items-center justify-center text-zinc-400 relative">
                             <Users className="w-10 h-10" />
                              {selection.staff?.id === "any" && (
-                                <div className="absolute inset-0 bg-orange-600/20 flex items-center justify-center">
-                                    <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                                <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: `${storeColor}33` }}>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: storeColor }}>
                                         <Check className="w-4 h-4" />
                                     </div>
                                 </div>
@@ -463,8 +473,10 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                                 </div>
                                 <div className={cn(
                                     "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                                    isSelected ? "bg-orange-600 border-orange-600 text-white" : "border-zinc-200"
-                                )}>
+                                    isSelected ? "text-white border-transparent" : "border-zinc-200"
+                                )}
+                                style={isSelected ? { backgroundColor: storeColor } : undefined}
+                                >
                                     {isSelected && <Check className="w-4 h-4" />}
                                 </div>
                             </button>

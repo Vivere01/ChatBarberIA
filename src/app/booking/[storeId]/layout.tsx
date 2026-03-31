@@ -3,8 +3,8 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-    Home, Calendar, Trophy, FileText, User, LogOut, Scissors, Loader2 
+import {
+    Home, Calendar, Trophy, FileText, User, LogOut, Scissors, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStoreForBooking } from "@/app/actions/booking-actions";
@@ -22,6 +22,7 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
     const storeId = params.storeId;
     const [storeName, setStoreName] = useState("Carregando...");
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [storeColor, setStoreColor] = useState("#ea580c");
 
     const isLoginPage = pathname.endsWith("/login");
 
@@ -31,6 +32,7 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
             if (store) {
                 setStoreName(store.name);
                 setLogoUrl(store.logoUrl);
+                setStoreColor(store.primaryColor || "#ea580c");
             } else {
                 setStoreName("Barbearia");
             }
@@ -71,7 +73,10 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
             <aside className="hidden md:flex flex-col w-72 bg-white border-r border-zinc-200 h-screen sticky top-0 shadow-xl shadow-zinc-200/50">
                 <div className="p-8 pb-10">
                     <Link href={`/booking/${storeId}/inicio`} className="flex items-center gap-3 group">
-                        <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-hover:rotate-12 transition-transform duration-500">
+                        <div 
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform duration-500"
+                            style={{ backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` }}
+                        >
                             {logoUrl ? (
                                 <img src={logoUrl} alt={storeName} className="w-full h-full object-cover rounded-2xl" />
                             ) : (
@@ -82,7 +87,7 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
                             <span className="font-display font-black text-2xl tracking-tighter text-zinc-900 italic uppercase leading-tight">
                                 {storeName.split(' ')[0]}
                             </span>
-                            <p className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em]">Barbearia</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: storeColor }}>Barbearia</p>
                         </div>
                     </Link>
                 </div>
@@ -96,10 +101,11 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
                                 href={item.href}
                                 className={cn(
                                     "flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all group",
-                                    active 
-                                        ? "bg-orange-600 text-white shadow-lg shadow-orange-600/20 translate-x-1" 
+                                    active
+                                        ? "text-white translate-x-1"
                                         : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
                                 )}
+                                style={active ? { backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` } : undefined}
                             >
                                 <item.icon className={cn("w-5 h-5 transition-transform", active ? "scale-110" : "group-hover:scale-110")} />
                                 {item.label}
@@ -110,7 +116,7 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
                 </nav>
 
                 <div className="p-6 border-t border-zinc-100 bg-zinc-50/50">
-                    <button 
+                    <button
                         onClick={() => signOut({ callbackUrl: `/booking/${storeId}/login` })}
                         className="flex items-center gap-4 w-full px-5 py-3.5 rounded-xl text-sm font-bold text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-all group"
                     >
@@ -126,7 +132,10 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
             {/* Mobile Nav Top */}
             <div className="md:hidden bg-white border-b p-4 flex items-center justify-between sticky top-0 z-40 bg-white/80 backdrop-blur-md">
                 <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/10">
+                    <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
+                        style={{ backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` }}
+                    >
                         {logoUrl ? (
                             <img src={logoUrl} alt={storeName} className="w-full h-full object-cover rounded-xl" />
                         ) : (
@@ -153,8 +162,11 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
                     const active = pathname === item.href;
                     return (
                         <Link key={item.href} href={item.href} className="flex flex-col items-center relative py-1">
-                            <item.icon className={cn("w-6 h-6 transition-all", active ? "text-orange-500 scale-125 -translate-y-1" : "text-zinc-500")} />
-                            {active && <div className="absolute -bottom-1 w-1 h-1 rounded-full bg-orange-500" />}
+                            <item.icon 
+                                className={cn("w-6 h-6 transition-all", active ? "scale-125 -translate-y-1" : "text-zinc-500")} 
+                                style={active ? { color: storeColor } : undefined}
+                            />
+                            {active && <div className="absolute -bottom-1 w-1 h-1 rounded-full" style={{ backgroundColor: storeColor }} />}
                         </Link>
                     );
                 })}

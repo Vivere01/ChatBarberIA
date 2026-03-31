@@ -30,8 +30,16 @@ export async function getStoreBySlug(slug: string) {
     try {
         const store = await prisma.store.findUnique({
             where: { slug, isActive: true },
-            select: { id: true, name: true, ownerId: true, logoUrl: true }
+            select: { 
+                id: true, 
+                name: true, 
+                ownerId: true, 
+                logoUrl: true, 
+                primaryColor: true,
+                loginBackgroundUrl: true
+            }
         });
+
         return store;
     } catch (error) {
         console.error("Error fetching store by slug:", error);

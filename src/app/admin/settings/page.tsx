@@ -21,7 +21,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [copied, setCopied] = useState(false);
-    
+
     // Gateway settings
     const [gatewayData, setGatewayData] = useState({
         id: "",
@@ -48,7 +48,7 @@ export default function SettingsPage() {
             getGatewaySettings(),
             getStoreSettings()
         ]);
-        
+
         if (gateRes.success && gateRes.settings) {
             setGatewayData({
                 id: (gateRes.settings as any).id || "",
@@ -94,8 +94,8 @@ export default function SettingsPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const webhookUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/api/webhooks/celcash/${gatewayData.id || 'seu-id'}` 
+    const webhookUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/api/webhooks/celcash/${gatewayData.id || 'seu-id'}`
         : "...";
 
     return (
@@ -148,25 +148,25 @@ export default function SettingsPage() {
 
                                         <form onSubmit={handleSaveStore} className="space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                <ColorPicker 
-                                                    label="Cor Principal (Marca)" 
-                                                    value={storeData.primaryColor} 
-                                                    onChange={(v) => setStoreData({ ...storeData, primaryColor: v })} 
+                                                <ColorPicker
+                                                    label="Cor Principal (Marca)"
+                                                    value={storeData.primaryColor}
+                                                    onChange={(v) => setStoreData({ ...storeData, primaryColor: v })}
                                                 />
-                                                <ColorPicker 
-                                                    label="Agendamento Assinante" 
-                                                    value={storeData.colorSubscriber} 
-                                                    onChange={(v) => setStoreData({ ...storeData, colorSubscriber: v })} 
+                                                <ColorPicker
+                                                    label="Agendamento Assinante"
+                                                    value={storeData.colorSubscriber}
+                                                    onChange={(v) => setStoreData({ ...storeData, colorSubscriber: v })}
                                                 />
-                                                <ColorPicker 
-                                                    label="Agendamento Avulso" 
-                                                    value={storeData.colorRegular} 
-                                                    onChange={(v) => setStoreData({ ...storeData, colorRegular: v })} 
+                                                <ColorPicker
+                                                    label="Agendamento Avulso"
+                                                    value={storeData.colorRegular}
+                                                    onChange={(v) => setStoreData({ ...storeData, colorRegular: v })}
                                                 />
-                                                <ColorPicker 
-                                                    label="Agendamento Devedor" 
-                                                    value={storeData.colorDefaulter} 
-                                                    onChange={(v) => setStoreData({ ...storeData, colorDefaulter: v })} 
+                                                <ColorPicker
+                                                    label="Agendamento Devedor"
+                                                    value={storeData.colorDefaulter}
+                                                    onChange={(v) => setStoreData({ ...storeData, colorDefaulter: v })}
                                                 />
                                             </div>
 
@@ -182,7 +182,7 @@ export default function SettingsPage() {
 
                                 {activeTab === "Horários" && (
                                     <div className="glass-card rounded-3xl p-8 space-y-8 border border-white/5 bg-dark-800/20 shadow-2xl">
-                                         <div>
+                                        <div>
                                             <h2 className="font-bold text-lg flex items-center gap-3">
                                                 <Clock className="w-5 h-5 text-brand-400" /> Horários de Funcionamento
                                             </h2>
@@ -198,11 +198,11 @@ export default function SettingsPage() {
                                                             <div className={cn("w-3 h-3 rounded-full", config.isOpen ? "bg-emerald-500" : "bg-red-500")} />
                                                             <span className="text-sm font-bold text-zinc-200">{day.name}</span>
                                                         </div>
-                                                        
+
                                                         <div className="flex items-center gap-6">
                                                             <div className="flex items-center gap-2">
-                                                                <input 
-                                                                    type="time" 
+                                                                <input
+                                                                    type="time"
                                                                     disabled={!config.isOpen}
                                                                     value={config.openTime}
                                                                     onChange={(e) => {
@@ -212,11 +212,11 @@ export default function SettingsPage() {
                                                                         else newHours.push({ dayOfWeek: day.id, isOpen: true, openTime: e.target.value, closeTime: "20:00" });
                                                                         setStoreData({ ...storeData, businessHours: newHours });
                                                                     }}
-                                                                    className="bg-dark-800 border-none rounded-lg px-3 py-2 text-xs font-bold text-zinc-300 outline-none disabled:opacity-30" 
+                                                                    className="bg-dark-800 border-none rounded-lg px-3 py-2 text-xs font-bold text-zinc-300 outline-none disabled:opacity-30"
                                                                 />
                                                                 <span className="text-zinc-600 text-[10px] font-black uppercase">até</span>
-                                                                <input 
-                                                                    type="time" 
+                                                                <input
+                                                                    type="time"
                                                                     disabled={!config.isOpen}
                                                                     value={config.closeTime}
                                                                     onChange={(e) => {
@@ -226,11 +226,11 @@ export default function SettingsPage() {
                                                                         else newHours.push({ dayOfWeek: day.id, isOpen: true, openTime: "08:00", closeTime: e.target.value });
                                                                         setStoreData({ ...storeData, businessHours: newHours });
                                                                     }}
-                                                                    className="bg-dark-800 border-none rounded-lg px-3 py-2 text-xs font-bold text-zinc-300 outline-none disabled:opacity-30" 
+                                                                    className="bg-dark-800 border-none rounded-lg px-3 py-2 text-xs font-bold text-zinc-300 outline-none disabled:opacity-30"
                                                                 />
                                                             </div>
 
-                                                            <button 
+                                                            <button
                                                                 type="button"
                                                                 onClick={() => {
                                                                     const newHours = [...storeData.businessHours];
@@ -355,18 +355,18 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
         <div className="space-y-3">
             <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{label}</span>
             <div className="flex items-center gap-4">
-                <input 
-                    type="color" 
-                    value={value} 
+                <input
+                    type="color"
+                    value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="w-16 h-16 bg-transparent rounded-2xl cursor-pointer border-none shadow-xl transform hover:scale-105 transition-all" 
+                    className="w-16 h-16 bg-transparent rounded-2xl cursor-pointer border-none shadow-xl transform hover:scale-105 transition-all"
                 />
                 <div className="flex-1">
-                    <input 
-                        type="text" 
-                        value={value} 
+                    <input
+                        type="text"
+                        value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full bg-dark-900/50 border border-white/5 rounded-xl px-4 py-2 text-xs font-mono text-zinc-400 outline-none" 
+                        className="w-full bg-dark-900/50 border border-white/5 rounded-xl px-4 py-2 text-xs font-mono text-zinc-400 outline-none"
                     />
                 </div>
             </div>

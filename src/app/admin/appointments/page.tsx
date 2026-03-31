@@ -10,7 +10,7 @@ import { createAdminAppointment, getAppointments, updateAppointmentStatus, delet
 import { getStaffList } from "@/app/actions/staff-actions";
 import { getServicesList } from "@/app/actions/service-actions";
 import { getClientsList } from "@/app/actions/client-actions";
-import { getWaitlistEntries, updateWaitlistStatus } from "@/app/actions/waitlist-actions";
+import { getWaitlistEntries, updateWaitlistStatus, createAdminWaitlistEntry } from "@/app/actions/waitlist-actions";
 import { getStoreSettings } from "@/app/actions/settings-actions";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,7 @@ export default function AppointmentsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAptId, setEditingAptId] = useState<string | null>(null);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+    const [isAddWaitlistOpen, setIsAddWaitlistOpen] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     
     const [clientHistory, setClientHistory] = useState<any[]>([]);
@@ -161,9 +162,14 @@ export default function AppointmentsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setIsWaitlistOpen(true)} className="flex items-center gap-2 bg-dark-800/40 text-[10px] font-black uppercase tracking-widest text-orange-400 px-5 py-3 rounded-xl border border-orange-500/10 hover:bg-orange-500/5 relative">
-                            <ListTodo className="w-3.5 h-3.5" /> Lista de Espera {waitlist.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white flex items-center justify-center rounded-full text-[9px] border-2 border-dark-900 shadow-xl">{waitlist.length}</span>}
-                        </button>
+                        <div className="flex bg-dark-800/40 rounded-xl border border-white/5 overflow-hidden">
+                            <button onClick={() => setIsWaitlistOpen(true)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-orange-400 px-5 py-3 hover:bg-orange-500/5 relative border-r border-white/5">
+                                <ListTodo className="w-3.5 h-3.5" /> Lista de Espera {waitlist.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white flex items-center justify-center rounded-full text-[9px] border-2 border-dark-900 shadow-xl">{waitlist.length}</span>}
+                            </button>
+                            <button onClick={() => setIsAddWaitlistOpen(true)} className="p-3 text-orange-400 hover:bg-orange-500/5" title="Adicionar à Espera">
+                                <UserPlus className="w-4 h-4" />
+                            </button>
+                        </div>
                         <button onClick={() => { setEditingAptId(null); setFormData({ clientId: "", staffId: "", serviceIds: [], time: "09:00", date: selectedDate }); setIsModalOpen(true); }} className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-brand hover:scale-105 transition-all">
                             <Plus className="w-4 h-4" /> NOVO AGENDAMENTO
                         </button>
@@ -474,10 +480,52 @@ export default function AppointmentsPage() {
                     {waitlist.length === 0 ? <div className="py-20 text-center opacity-30 uppercase font-black tracking-widest text-xs">Sem clientes em espera</div> : waitlist.map((item) => (
                         <div key={item.id} className="flex items-center justify-between p-7 bg-dark-800/20 rounded-3xl border border-white/5 shadow-2xl">
                             <div className="flex flex-col"><h4 className="font-black text-white uppercase text-xs tracking-wider">{item.client.name}</h4><span className="text-[10px] font-bold text-zinc-600 mt-1">{item.client.phone}</span></div>
-                            <button onClick={() => updateWaitlistStatus(item.id, 'FULFILLED').then(loadData)} className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-6 h-6" /></button>
+                            <div className="flex gap-2">
+                                <button onClick={() => updateWaitlistStatus(item.id, 'FULFILLED').then(loadData)} className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-6 h-6" /></button>
+                                <button onClick={() => updateWaitlistStatus(item.id, 'CANCELLED').then(loadData)} className="p-4 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><X className="w-6 h-6" /></button>
+                            </div>
                         </div>
                     ))}
                 </div>
+            </Modal>
+
+            <Modal isOpen={isAddWaitlistOpen} onClose={() => setIsAddWaitlistOpen(false)} title="Adicionar à Lista de Espera">
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setLoading(true);
+                    const formDataObj = new FormData(e.currentTarget);
+                    const clientId = formDataObj.get("clientId") as string;
+                    const storeId = storeSettings?.id;
+                    if (!clientId || !storeId) return alert("Selecione um cliente.");
+                    
+                    const res = await createAdminWaitlistEntry({
+                        clientId,
+                        storeId,
+                        requestedDate: selectedDate,
+                        notes: formDataObj.get("notes") as string
+                    });
+                    
+                    if (res.success) {
+                        await loadData();
+                        setIsAddWaitlistOpen(false);
+                    } else {
+                        alert(res.error);
+                    }
+                    setLoading(false);
+                }} className="space-y-6">
+                    <Section label="CLIENTE">
+                        <select name="clientId" required className="custom-input !h-14">
+                            <option value="">Selecione o Cliente</option>
+                            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                    </Section>
+                    <Section label="OBSERVAÇÕES">
+                        <textarea name="notes" className="custom-input !h-24 py-4" placeholder="Alguma observação?" />
+                    </Section>
+                    <button type="submit" disabled={loading} className="w-full h-14 bg-brand-gradient text-white rounded-2xl font-black uppercase tracking-widest">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "ADICIONAR À ESPERA"}
+                    </button>
+                </form>
             </Modal>
 
             <style jsx global>{`

@@ -16,12 +16,16 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [store, setStore] = useState<any>(null);
+    const [storeColor, setStoreColor] = useState("#ea580c");
 
     useEffect(() => {
         const fetchStore = async () => {
             setIsLoading(true);
             const data = await getStoreForBooking(storeId);
-            if (data) setStore(data);
+            if (data) {
+                setStore(data);
+                setStoreColor(data.primaryColor || "#ea580c");
+            }
             setIsLoading(false);
         };
         fetchStore();
@@ -30,7 +34,7 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: storeColor }} />
             </div>
         );
     }
@@ -58,7 +62,7 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
                     </div>
                 </div>
             ) : (
-                <div className="bg-orange-600 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden group">
+                <div className="rounded-3xl p-8 md:p-12 text-white relative overflow-hidden group" style={{ backgroundColor: storeColor }}>
                     <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 skew-x-[-20deg] translate-x-10 group-hover:translate-x-0 transition-transform duration-700" />
                     <div className="relative z-10 max-w-lg">
                         <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">
@@ -73,7 +77,7 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
             {/* User Greeting */}
             <div className="px-2">
                 <h3 className="text-2xl font-black text-zinc-900 tracking-tight leading-none italic uppercase">
-                    Olá, <span className="text-orange-600">{session?.user?.name?.split(' ')[0] || "Cliente"}</span>!
+                    Olá, <span style={{ color: storeColor }}>{session?.user?.name?.split(' ')[0] || "Cliente"}</span>!
                 </h3>
                 <p className="text-zinc-500 text-sm font-medium mt-1">Pronto para dar um trato no visual hoje?</p>
             </div>
@@ -82,7 +86,10 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
             <div className="bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 border border-zinc-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0">
+                        <div 
+                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${storeColor}1A`, color: storeColor }}
+                        >
                             <Zap className="w-6 h-6 fill-current" />
                         </div>
                         <div>
@@ -126,7 +133,7 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
             <div>
                 <div className="flex items-center justify-between mb-6 px-2">
                     <h3 className="font-black text-zinc-900 text-lg uppercase italic tracking-tight">Próximos agendamentos</h3>
-                    <Link href={`/booking/${storeId}/agendamentos`} className="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-orange-600 transition-colors">
+                    <Link href={`/booking/${storeId}/agendamentos`} className="text-xs font-black uppercase tracking-widest text-zinc-400 transition-colors" style={{ color: storeColor }}>
                         Ver tudo
                     </Link>
                 </div>
@@ -145,7 +152,8 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
             <div className="fixed bottom-6 left-4 right-4 md:left-auto md:right-10 md:bottom-10 z-50">
                 <Link 
                     href={`/booking/${storeId}/agendar`}
-                    className="flex items-center justify-center gap-3 w-full md:w-auto md:px-12 h-20 bg-orange-600 hover:bg-orange-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[2rem] shadow-2xl shadow-orange-600/30 transition-all hover:scale-[1.05] active:scale-95 border-4 border-white"
+                    className="flex items-center justify-center gap-3 w-full md:w-auto md:px-12 h-20 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[2rem] transition-all hover:scale-[1.05] active:scale-95 border-4 border-white"
+                    style={{ backgroundColor: storeColor, boxShadow: `0 25px 50px -12px ${storeColor}4D` }}
                 >
                     <Plus className="w-6 h-6" /> Novo agendamento
                 </Link>

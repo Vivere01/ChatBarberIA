@@ -138,9 +138,10 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
         setBookingLoading(true);
         try {
             // Parse date "DD/MM/YYYY" and time "HH:MM" to Date object
+            // Parse date "DD/MM/YYYY" and time "HH:MM" para objeto Date em UTC (evita timezone drift)
             const [day, month, year] = selection.date.split('/').map(Number);
             const [hour, minute] = selection.time.split(':').map(Number);
-            const scheduledAt = new Date(year, month - 1, day, hour, minute);
+            const scheduledAt = new Date(Date.UTC(year, month - 1, day, hour, minute));
 
             const result = await createAppointment({
                 storeId,
@@ -222,7 +223,7 @@ export default function BookingFlowPage({ params }: { params: { storeId: string 
                 })}
             </div>
 
-            <div className="fixed bottom-6 left-4 right-4 md:static md:mt-12">
+            <div className="fixed bottom-32 left-4 right-4 md:static md:mt-12 z-40">
                 <button
                     onClick={handleBooking}
                     disabled={!selection.staff || selection.services.length === 0 || !selection.date || !selection.time || bookingLoading}

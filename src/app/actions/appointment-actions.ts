@@ -112,6 +112,7 @@ export async function cancelClientAppointment(appointmentId: string) {
         });
 
         revalidatePath("/booking/[storeId]/agendamentos", "page");
+        revalidatePath("/admin/appointments");
         return { success: true };
     } catch (error) {
         console.error("Error cancelling appointment:", error);
@@ -195,7 +196,8 @@ export async function getAppointments(date: Date) {
                 scheduledAt: {
                     gte: start,
                     lte: end,
-                }
+                },
+                status: { not: 'CANCELLED' }
             },
             include: {
                 client: {

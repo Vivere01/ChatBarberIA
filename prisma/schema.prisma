@@ -96,6 +96,15 @@ enum ReferralStatus {
   EXPIRED
 }
 
+enum SubscriptionPeriodicity {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  YEARLY
+}
+
 // ─────────────────────────────────────────────────────────────
 // OWNERS (Donos de sistema SaaS)
 // ─────────────────────────────────────────────────────────────
@@ -222,6 +231,7 @@ model Staff {
   campaignEntries     CampaignEntry[]
   npsRatings          NpsRating[]
   referralCampaignLinks ReferralLink[]
+  allowedSubscriptionPlans SubscriptionPlanStaff[]
 
   @@index([storeId])
   @@map("staff")
@@ -416,24 +426,41 @@ model AppointmentItem {
 // ─────────────────────────────────────────────────────────────
 
 model SubscriptionPlan {
-  id              String    @id @default(cuid())
-  ownerId         String
-  name            String
-  description     String?
-  price           Float
-  potAmount       Float     @default(0)    // Valor da mensalidade que vai para o "pote"
-  chipsPerService Int       @default(1)    // Quantidade de fichas por atendimento
-  billingCycleDay Int       @default(1)
-  intervalDays    Int       @default(30)
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                        String    @id @default(cuid())
+  ownerId                   String
+  name                      String
+  description               String?
+  price                     Float
+  potAmount                 Float     @default(0)    // Valor da mensalidade que vai para o "pote"
+  chipsPerService           Int       @default(1)    // Quantidade de fichas por atendimento
+  billingCycleDay           Int       @default(1)
+  intervalDays              Int       @default(30)
+  periodicity               SubscriptionPeriodicity @default(MONTHLY)
+  productDiscountPercent    Float     @default(0)    // Desconto em produtos (%)
+  activeDays                Int[]     @default([1, 2, 3, 4, 5, 6]) // 0=Sunday, 1=Monday... (Default Mon-Sat)
+  maxSimultaneousAppointments Int     @default(1)    // Qtd agendamentos simultâneos/visíveis
+  galaxId                   String?   // ID no Celcash/GalaxPay
+  isActive                  Boolean   @default(true)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
   owner                    Owner                     @relation(fields: [ownerId], references: [id])
   services                 SubscriptionPlanService[]
   clientSubscriptions      ClientSubscription[]
+  allowedStaff             SubscriptionPlanStaff[]
 
   @@map("subscription_plans")
+}
+
+model SubscriptionPlanStaff {
+  planId  String
+  staffId String
+
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  staff   Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([planId, staffId])
+  @@map("subscription_plan_staff")
 }
 
 model SubscriptionPlanService {

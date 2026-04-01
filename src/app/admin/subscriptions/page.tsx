@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { getSubscriptionPlans, createSubscriptionPlan, deleteSubscriptionPlan } from "@/app/actions/subscription-actions";
 import { EmptyState } from "@/components/admin/empty-state";
+import Link from "next/link";
 
 export default function SubscriptionsPage() {
     const [plans, setPlans] = useState<any[]>([]);
@@ -19,7 +20,8 @@ export default function SubscriptionsPage() {
         description: "",
         price: 0,
         potAmount: 0,
-        chipsPerService: 1
+        chipsPerService: 1,
+        galaxId: ""
     });
 
     useEffect(() => {
@@ -40,7 +42,7 @@ export default function SubscriptionsPage() {
         if (res.success) {
             loadPlans();
             setIsModalOpen(false);
-            setFormData({ name: "", description: "", price: 0, potAmount: 0, chipsPerService: 1 });
+            setFormData({ name: "", description: "", price: 0, potAmount: 0, chipsPerService: 1, galaxId: "" });
         } else { alert(res.error); }
         setLoading(false);
     };
@@ -83,14 +85,17 @@ export default function SubscriptionsPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {plans.map((plan) => (
-                            <div key={plan.id} className="glass-card rounded-3xl p-6 border border-white/5 hover:border-brand-500/20 transition-all group">
+                            <div key={plan.id} className="glass-card rounded-3xl p-6 border border-white/5 hover:border-brand-500/20 transition-all group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 flex gap-2">
+                                    <button onClick={() => handleDelete(plan.id)} className="p-2 opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all">
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                </div>
+
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="w-12 h-12 rounded-2xl bg-brand-gradient flex items-center justify-center shadow-brand">
                                         <CreditCard className="w-6 h-6 text-white" />
                                     </div>
-                                    <button onClick={() => handleDelete(plan.id)} className="p-2 opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all">
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
                                 </div>
                                 <h3 className="font-bold text-lg mb-1">{plan.name}</h3>
                                 <p className="text-zinc-500 text-sm mb-6 line-clamp-2">{plan.description || "Sem descrição"}</p>
@@ -111,11 +116,19 @@ export default function SubscriptionsPage() {
                                         <span className="text-zinc-500 font-medium">Fichas/Serviço</span>
                                         <span className="text-white font-bold">{plan.chipsPerService} Fichas</span>
                                     </div>
-                                    <div className="flex justify-between text-[10px] pt-2 uppercase font-black tracking-widest text-zinc-600">
+                                    <div className="flex justify-between text-[10px] pt-2 uppercase font-black tracking-widest text-zinc-600 mb-4">
                                         <span>Assinantes ativos</span>
                                         <span>{plan._count.clientSubscriptions}</span>
                                     </div>
                                 </div>
+
+                                <Link 
+                                    href={`/admin/subscriptions/${plan.id}`}
+                                    className="w-full mt-4 flex items-center justify-center gap-2 bg-white/5 hover:bg-brand-500/10 text-white hover:text-brand-400 py-3 rounded-xl text-xs font-bold transition-all border border-transparent hover:border-brand-500/20"
+                                >
+                                    <Settings2 className="w-4 h-4" />
+                                    Gerenciar Plano
+                                </Link>
                             </div>
                         ))}
                     </div>
@@ -168,6 +181,15 @@ export default function SubscriptionsPage() {
                                 className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
                             />
                             <p className="text-[9px] text-zinc-500 mt-2 font-medium italic">* Geralmente 1 ficha. Planos mais caros podem gerar mais pontos para o Barbeiro.</p>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2">Galax ID (Celcash)</label>
+                            <input 
+                                value={formData.galaxId}
+                                onChange={(e) => setFormData({ ...formData, galaxId: e.target.value })}
+                                placeholder="ID do plano no gateway"
+                                className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                            />
                         </div>
                     </div>
                     <div className="pt-4 flex gap-3">

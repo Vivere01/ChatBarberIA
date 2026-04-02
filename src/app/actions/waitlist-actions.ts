@@ -39,7 +39,7 @@ export async function createAdminWaitlistEntry(data: {
     }
 }
 
-export async function getWaitlistEntries(date?: Date | string) {
+export async function getWaitlistEntries(date?: Date | string, filterStoreId?: string) {
     try {
         const ownerId = await getEffectiveOwnerId();
 
@@ -47,6 +47,10 @@ export async function getWaitlistEntries(date?: Date | string) {
             store: { ownerId },
             status: "PENDING"
         };
+        
+        if (filterStoreId && filterStoreId !== 'all') {
+            whereClause.storeId = filterStoreId;
+        }
 
         if (date) {
             const dateObj = new Date(date);

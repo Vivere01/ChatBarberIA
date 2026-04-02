@@ -3,13 +3,29 @@
 import { useSession, signOut } from "next-auth/react";
 import { Bell, Search, ChevronDown, Store, LogOut, Settings, User, Menu } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { getOwnerStores } from "@/app/actions/store-actions";
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
     const { data: session } = useSession();
     const user = session?.user;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+    const [stores, setStores] = useState<any[]>([]);
+
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const router = useRouter();
+
+    const currentStoreId = searchParams.get("storeId") || "all";
+
+    useEffect(() => {
+        getOwnerStores().then(setStores);
+    }, []);
+
+    const selectedStoreName = currentStoreId === "all" ? "Todas as lojas" : stores.find(s => s.id === currentStoreId)?.name || "Carregando...";
 
     return (
         <header className="h-16 border-b border-white/5 bg-dark-800 flex items-center justify-between px-4 md:px-6 flex-shrink-0 relative z-30">
@@ -35,11 +51,50 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
             {/* Right */}
             <div className="flex items-center gap-4">
                 {/* Store selector */}
-                <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/8 text-sm text-zinc-300 hover:border-white/15 transition-all">
-                    <Store className="w-4 h-4 text-brand-400" />
-                    <span className="hidden md:block">Todas as lojas</span>
-                    <ChevronDown className="w-3 h-3 text-zinc-500" />
-                </button>
+                {/* Store selector */}
+                <div className="relative">
+                    <button onClick={() => setStoreMenuOpen(!storeMenuOpen)} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/8 text-sm text-zinc-300 hover:border-white/15 transition-all">
+                        <Store className="w-4 h-4 text-brand-400" />
+                        <span className="hidden md:block truncate max-w-[120px]">{selectedStoreName}</span>
+                        <ChevronDown className="w-3 h-3 text-zinc-500" />
+                    </button>
+                    {storeMenuOpen && (
+                        <>
+                            <div className="fixed inset-0 z-10" onClick={() => setStoreMenuOpen(false)} />
+                            <div className="absolute right-0 mt-2 w-56 bg-dark-800 border border-white/10 rounded-2xl shadow-2xl z-20 overflow-hidden backdrop-blur-xl py-2">
+                                <button
+                                    onClick={() => {
+                                        const params = new URLSearchParams(searchParams);
+                                        params.delete("storeId");
+                                        router.replace(`${pathname}?${params.toString()}`);
+                                        setStoreMenuOpen(false);
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold hover:bg-white/5 transition-colors ${currentStoreId === "all" ? "text-brand-400" : "text-zinc-300"}`}
+                                >
+                                    <Store className="w-4 h-4" />
+                                    Todas as lojas
+                                </button>
+                                {stores.map(store => (
+                                    <button
+                                        key={store.id}
+                                        onClick={() => {
+                                            const params = new URLSearchParams(searchParams);
+                                            params.set("storeId", store.id);
+                                            router.replace(`${pathname}?${params.toString()}`);
+                                            setStoreMenuOpen(false);
+                                        }}
+                                        className={`w-full text-left flex items-center gap-3 px-4 py-2.5 text-xs font-bold hover:bg-white/5 transition-colors ${currentStoreId === store.id ? "text-brand-400" : "text-zinc-300"}`}
+                                    >
+                                        <div className="w-5 h-5 rounded bg-white/10 flex items-center justify-center shrink-0 uppercase">
+                                            {store.name.charAt(0)}
+                                        </div>
+                                        <span className="truncate">{store.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
 
                 {/* Notifications */}
                 <button className="relative w-9 h-9 rounded-lg border border-white/8 flex items-center justify-center hover:border-white/15 transition-all">

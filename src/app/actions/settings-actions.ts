@@ -53,7 +53,7 @@ export async function updateGatewaySettings(data: {
     }
 }
 
-export async function getStoreSettings() {
+export async function getStoreSettings(storeId?: string) {
     try {
         const { getAuthSession } = await import("@/lib/auth");
         const session = await getAuthSession();
@@ -62,7 +62,10 @@ export async function getStoreSettings() {
         }
 
         const store = await prisma.store.findFirst({
-            where: { ownerId: (session.user as any).id },
+            where: { 
+                ownerId: (session.user as any).id,
+                ...(storeId && storeId !== 'all' && { id: storeId })
+            },
             include: { businessHours: true }
         });
 

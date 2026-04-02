@@ -15,12 +15,13 @@ function resolveRole(role: string): string {
     return validRoles.includes(mapped) ? mapped : "STAFF";
 }
 
-export async function getStaffList() {
+export async function getStaffList(filterStoreId?: string) {
     try {
         const ownerId = await getEffectiveOwnerId();
         const staff = await prisma.staff.findMany({
             where: {
-                store: { ownerId }
+                store: { ownerId },
+                ...(filterStoreId && filterStoreId !== 'all' && { storeId: filterStoreId }),
             },
             include: {
                 store: {

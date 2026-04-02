@@ -4,6 +4,7 @@ import AdminShell from "@/components/admin/admin-shell";
 import { Plus, ChevronLeft, ChevronRight, Clock, User, Scissors, MoreVertical, Trash2, CheckCircle, XCircle, Loader2, Info, ListTodo, X, Monitor, Trophy, DollarSign, AlertCircle, Crown, Search, Calendar, History, MessageCircle, ExternalLink, UserPlus, ArrowRight } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format, addDays, subDays, isSameDay } from "date-fns";
+import { useSearchParams } from "next/navigation";
 import { ptBR } from "date-fns/locale";
 import { Modal } from "@/components/ui/modal";
 import { createAdminAppointment, getAppointments, updateAppointmentStatus, deleteAppointment, getClientHistory, updateAdminAppointment } from "@/app/actions/appointment-actions";
@@ -19,6 +20,8 @@ const START_HOUR = 8;
 const END_HOUR = 22;
 
 export default function AppointmentsPage() {
+    const searchParams = useSearchParams();
+    const currentStoreId = searchParams.get("storeId") || "all";
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentTime, setCurrentTime] = useState(new Date());
     const [appointments, setAppointments] = useState<any[]>([]);
@@ -53,7 +56,7 @@ export default function AppointmentsPage() {
 
     useEffect(() => {
         loadData();
-    }, [selectedDate]);
+    }, [selectedDate, currentStoreId]);
 
     // Auto-refresh every 30 seconds to see client bookings automatically
     useEffect(() => {
@@ -61,7 +64,7 @@ export default function AppointmentsPage() {
             loadData();
         }, 30000); // 30 seconds
         return () => clearInterval(refreshInterval);
-    }, [selectedDate]);
+    }, [selectedDate, currentStoreId]);
 
     useEffect(() => {
         if (formData.clientId) {
@@ -75,12 +78,12 @@ export default function AppointmentsPage() {
         setFetching(true);
         try {
             const [aptRes, staffRes, servRes, clientRes, waitRes, storeRes] = await Promise.all([
-                getAppointments(selectedDate),
-                getStaffList(),
+                getAppointments(selectedDate, currentStoreId),
+                getStaffList(currentStoreId),
                 getServicesList(),
                 getClientsList(),
-                getWaitlistEntries(selectedDate),
-                getStoreSettings()
+                getWaitlistEntries(selectedDate, currentStoreId),
+                getStoreSettings(currentStoreId)
             ]);
             setAppointments(aptRes || []);
             setStaff(staffRes || []);

@@ -171,7 +171,9 @@ export async function createAdminAppointment(data: {
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
-        const storeId = await getEffectiveStoreId();
+        const staff = await prisma.staff.findUnique({ where: { id: data.staffId } });
+        if (!staff) throw new Error("Profissional não encontrado.");
+        const storeId = staff.storeId;
 
         const [hours, minutes] = data.time.split(':').map(Number);
         const baseDate = new Date(data.date);
@@ -221,7 +223,7 @@ export async function createAdminAppointment(data: {
     }
 }
 
-export async function getAppointments(date: Date) {
+export async function getAppointments(date: Date, filterStoreId?: string) {
     try {
         const ownerId = await getEffectiveOwnerId();
 
@@ -233,6 +235,7 @@ export async function getAppointments(date: Date) {
         const appointments = await prisma.appointment.findMany({
             where: {
                 store: { ownerId },
+                ...(filterStoreId && filterStoreId !== 'all' && { storeId: filterStoreId }),
                 scheduledAt: {
                     gte: start,
                     lte: end,

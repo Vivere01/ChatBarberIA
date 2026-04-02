@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Calendar, Clock, User, Scissors, ChevronRight, Loader2, CalendarX, History as HistoryIcon, MapPin } from "lucide-react";
-import Link from "next/link";
+import { Calendar, Clock, User, Scissors, Loader2, CalendarX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getClientAppointments, cancelClientAppointment } from "@/app/actions/appointment-actions";
 import { getClientWaitlist } from "@/app/actions/waitlist-actions";
+import Link from "next/link";
 
 const statusConfig: Record<string, { label: string; class: string }> = {
     SCHEDULED: { label: "Agendado", class: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
@@ -75,22 +75,8 @@ export default function ClientAppointmentsPage() {
                 </div>
             </header>
 
-            {/* Bottom Nav for Client App - Premium Touch */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-zinc-100 px-6 py-4 flex items-center justify-between z-50 lg:hidden">
-                 <Link href={`/booking/${storeId}/agendar`} className="flex flex-col items-center gap-1 group">
-                    <div className="p-3 bg-orange-600 text-white rounded-2xl shadow-lg ring-4 ring-orange-600/10 group-active:scale-95 transition-all">
-                        <Calendar className="w-6 h-6" />
-                    </div>
-                </Link>
-                <Link href={`/booking/${storeId}/agendamentos`} className="flex flex-col items-center gap-1 text-orange-600">
-                    <HistoryIcon className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Agenda</span>
-                </Link>
-                <Link href={`/booking/${storeId}/lojas`} className="flex flex-col items-center gap-1 text-zinc-400">
-                    <MapPin className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Lojas</span>
-                </Link>
-            </div>
+
+
 
             {appointments.length === 0 && waitlist.length === 0 ? (
                 <div className="py-20 flex flex-col items-center text-center px-6">

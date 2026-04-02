@@ -1,11 +1,6 @@
 "use client";
 
-import { 
-    Calendar, Trophy, ArrowRight, Plus, 
-    Zap, Star, ShieldCheck, MapPin, 
-    Phone, Clock as ClockIcon, Loader2,
-    Scissors
-} from "lucide-react";
+import { Calendar, Trophy, Plus, Zap, Loader2, Scissors } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getStoreForBooking } from "@/app/actions/booking-actions";
@@ -20,7 +15,6 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
 
     useEffect(() => {
         const fetchStore = async () => {
-            setIsLoading(true);
             const data = await getStoreForBooking(storeId);
             if (data) {
                 setStore(data);
@@ -34,129 +28,114 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin" style={{ color: storeColor }} />
+                <Loader2 className="w-5 h-5 animate-spin text-zinc-300" />
             </div>
         );
     }
 
-    if (!store) return <div className="text-center py-20 text-zinc-500">Barbearia não encontrada.</div>;
+    if (!store) return <div className="text-center py-20 text-zinc-400 text-sm">Barbearia não encontrada.</div>;
 
     const banners = store.banners || [];
+    const firstName = session?.user?.name?.split(' ')[0] || "Cliente";
 
     return (
-        <div className="space-y-8 pb-24">
-            {/* Banner Section */}
+        <div className="space-y-5">
+            {/* Banner */}
             {banners.length > 0 ? (
-                <div className="relative group">
-                    <div className="aspect-[21/9] md:aspect-[3/1] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl shadow-zinc-200 bg-zinc-200">
-                        <img 
-                            src={banners[0].imageUrl} 
-                            alt={banners[0].title} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-6 md:p-10">
-                            <h2 className="text-white text-xl md:text-3xl font-black max-w-lg leading-tight drop-shadow-lg">
-                                {banners[0].title}
-                            </h2>
-                        </div>
-                    </div>
+                <div className="rounded-2xl overflow-hidden h-36">
+                    <img
+                        src={banners[0].imageUrl}
+                        alt={banners[0].title}
+                        className="w-full h-full object-cover"
+                    />
                 </div>
             ) : (
-                <div className="rounded-3xl p-8 md:p-12 text-white relative overflow-hidden group" style={{ backgroundColor: storeColor }}>
-                    <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 skew-x-[-20deg] translate-x-10 group-hover:translate-x-0 transition-transform duration-700" />
-                    <div className="relative z-10 max-w-lg">
-                        <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">
-                            Sua experiência <br /> premium na <br /> {store.name}
-                        </h2>
-                        <p className="text-orange-100/80 font-medium">Agende seu horário com os melhores profissionais da região.</p>
-                    </div>
-                    <Scissors className="absolute right-8 bottom-8 w-24 h-24 text-white/10 rotate-12" />
+                <div
+                    className="rounded-2xl p-5 text-white relative overflow-hidden"
+                    style={{ backgroundColor: storeColor }}
+                >
+                    <Scissors className="absolute right-4 top-1/2 -translate-y-1/2 w-16 h-16 text-white/10" />
+                    <p className="text-xs font-medium text-white/70 mb-1">{store.name}</p>
+                    <h2 className="text-lg font-semibold leading-snug">
+                        Agende seu horário com os melhores profissionais
+                    </h2>
                 </div>
             )}
 
-            {/* User Greeting */}
-            <div className="px-2">
-                <h3 className="text-2xl font-black text-zinc-900 tracking-tight leading-none italic uppercase">
-                    Olá, <span style={{ color: storeColor }}>{session?.user?.name?.split(' ')[0] || "Cliente"}</span>!
+            {/* Saudação */}
+            <div>
+                <h3 className="text-base font-semibold text-zinc-900">
+                    Olá, <span style={{ color: storeColor }}>{firstName}</span>
                 </h3>
-                <p className="text-zinc-500 text-sm font-medium mt-1">Pronto para dar um trato no visual hoje?</p>
+                <p className="text-sm text-zinc-400 mt-0.5">Pronto para dar um trato no visual hoje?</p>
             </div>
 
-            {/* Plan Status */}
-            <div className="bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 border border-zinc-100 shadow-sm transition-all hover:shadow-md">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-start gap-4">
-                        <div 
-                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: `${storeColor}1A`, color: storeColor }}
-                        >
-                            <Zap className="w-6 h-6 fill-current" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-zinc-900">
-                                Seu plano atual
-                            </h3>
-                            <p className="text-zinc-500 text-sm mt-1 max-w-md">
-                                Você ainda não possui uma assinatura ativa. Aproveite cortes ilimitados e benefícios exclusivos!
-                            </p>
-                        </div>
-                    </div>
-                    <Link 
-                        href={`/booking/${storeId}/plano`}
-                        className="flex items-center justify-center h-12 px-6 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-xl transition-all active:scale-95 text-sm"
+            {/* Botão de Agendar */}
+            <Link
+                href={`/booking/${storeId}/agendar`}
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-white text-sm font-semibold transition-all active:scale-95"
+                style={{ backgroundColor: storeColor }}
+            >
+                <Plus className="w-4 h-4" />
+                Novo agendamento
+            </Link>
+
+            {/* Plano */}
+            <div className="bg-white rounded-xl p-4 border border-zinc-100">
+                <div className="flex items-center gap-3">
+                    <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${storeColor}15`, color: storeColor }}
                     >
-                        Conhecer Planos
+                        <Zap className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-zinc-900">Seu plano atual</p>
+                        <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+                            Você ainda não possui uma assinatura ativa.
+                        </p>
+                    </div>
+                    <Link
+                        href={`/booking/${storeId}/clube`}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-all whitespace-nowrap flex-shrink-0"
+                    >
+                        Ver planos
                     </Link>
                 </div>
             </div>
 
-            {/* Club Banner */}
-            <Link 
+            {/* Clube do Assinante */}
+            <Link
                 href={`/booking/${storeId}/clube`}
-                className="block bg-amber-400 hover:bg-amber-400/90 rounded-2xl md:rounded-3xl p-6 md:p-8 transition-all relative overflow-hidden group shadow-xl shadow-amber-400/10 hover:-translate-y-1"
+                className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4 transition-all active:scale-[0.98]"
             >
-                <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 skew-x-[-20deg] translate-x-10 group-hover:translate-x-0 transition-transform duration-700" />
-                <div className="relative flex items-center justify-between">
-                    <div>
-                        <h3 className="text-zinc-900 text-lg md:text-xl font-black uppercase italic tracking-tighter">
-                            Clube do assinante
-                        </h3>
-                        <p className="text-zinc-800 text-sm font-medium">Troque seus pontos por benefícios exclusivos</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-lg">
-                        <Trophy className="w-6 h-6" />
-                    </div>
+                <div className="w-9 h-9 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0 text-white">
+                    <Trophy className="w-4 h-4" />
                 </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Clube do assinante</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">Veja os benefícios exclusivos dos planos</p>
+                </div>
+                <span className="text-zinc-300 text-sm">›</span>
             </Link>
 
-            {/* Next Appointments Section */}
+            {/* Próximos Agendamentos */}
             <div>
-                <div className="flex items-center justify-between mb-6 px-2">
-                    <h3 className="font-black text-zinc-900 text-lg uppercase italic tracking-tight">Próximos agendamentos</h3>
-                    <Link href={`/booking/${storeId}/agendamentos`} className="text-xs font-black uppercase tracking-widest text-zinc-400 transition-colors" style={{ color: storeColor }}>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-zinc-900">Próximos agendamentos</h3>
+                    <Link
+                        href={`/booking/${storeId}/agendamentos`}
+                        className="text-xs font-medium"
+                        style={{ color: storeColor }}
+                    >
                         Ver tudo
                     </Link>
                 </div>
 
-                <div className="flex flex-col items-center justify-center py-12 md:py-20 bg-zinc-100/50 rounded-[2.5rem] border border-dashed border-zinc-200">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                        <Calendar className="w-8 h-8 text-zinc-300" />
-                    </div>
-                    <p className="text-zinc-400 font-bold text-[10px] uppercase tracking-[0.2em] text-center px-6">
-                        Você não tem agendamentos marcados
-                    </p>
+                <div className="flex flex-col items-center justify-center py-10 bg-white rounded-xl border border-zinc-100">
+                    <Calendar className="w-8 h-8 text-zinc-200 mb-2" />
+                    <p className="text-xs text-zinc-400">Nenhum agendamento marcado</p>
                 </div>
-            </div>
-
-            {/* Fixed Action Button - acima do nav inferior em mobile */}
-            <div className="fixed bottom-28 left-4 right-4 md:left-auto md:right-10 md:bottom-10 z-40 md:z-50">
-                <Link 
-                    href={`/booking/${storeId}/agendar`}
-                    className="flex items-center justify-center gap-3 w-full md:w-auto md:px-12 h-16 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[2rem] transition-all hover:scale-[1.02] active:scale-95 shadow-2xl"
-                    style={{ backgroundColor: storeColor, boxShadow: `0 20px 40px -12px ${storeColor}66` }}
-                >
-                    <Plus className="w-5 h-5" /> Novo agendamento
-                </Link>
             </div>
         </div>
     );

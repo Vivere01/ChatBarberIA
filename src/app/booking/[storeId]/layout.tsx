@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-    Home, Calendar, Trophy, FileText, User, LogOut, Scissors, Loader2
+    Home, Calendar, Trophy, User, LogOut, Scissors, Loader2, Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStoreForBooking } from "@/app/actions/booking-actions";
@@ -48,51 +48,46 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
 
     if (status === "loading") {
         return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
             </div>
         );
     }
 
-    // Se estiver na página de login, renderiza apenas os filhos
     if (isLoginPage) {
         return <>{children}</>;
     }
 
+    // 4 nav items — Plano removed (Clube já cobre isso)
     const navItems = [
         { href: `/booking/${storeId}/inicio`, icon: Home, label: "Início" },
-        { href: `/booking/${storeId}/agendamentos`, icon: Calendar, label: "Agendamentos" },
-        { href: `/booking/${storeId}/clube`, icon: Trophy, label: "Clube do assinante" },
-        { href: `/booking/${storeId}/plano`, icon: FileText, label: "Plano" },
+        { href: `/booking/${storeId}/agendamentos`, icon: Calendar, label: "Agenda" },
+        { href: `/booking/${storeId}/clube`, icon: Trophy, label: "Clube" },
         { href: `/booking/${storeId}/perfil`, icon: User, label: "Perfil" },
     ];
 
     return (
         <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row">
-            {/* Sidebar Desktop */}
-            <aside className="hidden md:flex flex-col w-72 bg-white border-r border-zinc-200 h-screen sticky top-0 shadow-xl shadow-zinc-200/50">
-                <div className="p-8 pb-10">
-                    <Link href={`/booking/${storeId}/inicio`} className="flex items-center gap-3 group">
-                        <div 
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform duration-500"
-                            style={{ backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` }}
+            {/* ── Sidebar Desktop ── */}
+            <aside className="hidden md:flex flex-col w-64 bg-white border-r border-zinc-100 h-screen sticky top-0">
+                <div className="p-6 border-b border-zinc-100">
+                    <Link href={`/booking/${storeId}/inicio`} className="flex items-center gap-3">
+                        <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center text-white overflow-hidden"
+                            style={{ backgroundColor: storeColor }}
                         >
-                            {logoUrl ? (
-                                <img src={logoUrl} alt={storeName} className="w-full h-full object-cover rounded-2xl" />
-                            ) : (
-                                <Scissors className="w-6 h-6" />
-                            )}
+                            {logoUrl
+                                ? <img src={logoUrl} alt={storeName} className="w-full h-full object-cover" />
+                                : <Scissors className="w-4 h-4" />}
                         </div>
-                        <div className="flex flex-col">
-                            <span className="font-display font-black text-2xl tracking-tighter text-zinc-900 italic uppercase leading-tight">
-                                {storeName.split(' ')[0]}
-                            </span>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: storeColor }}>Barbearia</p>
+                        <div>
+                            <p className="text-sm font-semibold text-zinc-900 leading-none">{storeName}</p>
+                            <p className="text-[11px] text-zinc-400 mt-0.5">Portal do cliente</p>
                         </div>
                     </Link>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+                <nav className="flex-1 p-3 space-y-0.5">
                     {navItems.map((item) => {
                         const active = pathname === item.href;
                         return (
@@ -100,73 +95,85 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all group",
+                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                                     active
-                                        ? "text-white translate-x-1"
-                                        : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
+                                        ? "text-white"
+                                        : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
                                 )}
-                                style={active ? { backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` } : undefined}
+                                style={active ? { backgroundColor: storeColor } : undefined}
                             >
-                                <item.icon className={cn("w-5 h-5 transition-transform", active ? "scale-110" : "group-hover:scale-110")} />
+                                <item.icon className="w-4 h-4 flex-shrink-0" />
                                 {item.label}
-                                {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
                             </Link>
                         );
                     })}
+
+                    <Link
+                        href={`/booking/${storeId}/agendar`}
+                        className="flex items-center gap-3 px-3 py-2.5 mt-3 rounded-lg text-sm font-semibold text-white w-full transition-all hover:opacity-90"
+                        style={{ backgroundColor: storeColor }}
+                    >
+                        <Plus className="w-4 h-4" />
+                        Agendar agora
+                    </Link>
                 </nav>
 
-                <div className="p-6 border-t border-zinc-100 bg-zinc-50/50">
+                <div className="p-3 border-t border-zinc-100">
                     <button
                         onClick={() => signOut({ callbackUrl: `/booking/${storeId}/login` })}
-                        className="flex items-center gap-4 w-full px-5 py-3.5 rounded-xl text-sm font-bold text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-all group"
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-zinc-50 hover:text-red-500 transition-all"
                     >
-                        <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                        Sair do sistema
+                        <LogOut className="w-4 h-4" />
+                        Sair
                     </button>
-                    <div className="mt-4 px-5">
-                        <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">© 2026 Chatbarber</p>
-                    </div>
                 </div>
             </aside>
 
-            {/* Mobile Nav Top */}
-            <div className="md:hidden bg-white border-b p-4 flex items-center justify-between sticky top-0 z-40 bg-white/80 backdrop-blur-md">
-                <div className="flex items-center gap-2">
-                    <div 
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
-                        style={{ backgroundColor: storeColor, boxShadow: `0 10px 15px -3px ${storeColor}33` }}
+            {/* ── Mobile Header ── */}
+            <div className="md:hidden bg-white border-b border-zinc-100 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+                <div className="flex items-center gap-2.5">
+                    <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden"
+                        style={{ backgroundColor: storeColor }}
                     >
-                        {logoUrl ? (
-                            <img src={logoUrl} alt={storeName} className="w-full h-full object-cover rounded-xl" />
-                        ) : (
-                            <Scissors className="w-5 h-5" />
-                        )}
+                        {logoUrl
+                            ? <img src={logoUrl} alt={storeName} className="w-full h-full object-cover" />
+                            : <Scissors className="w-4 h-4" />}
                     </div>
-                    <span className="font-black text-xl tracking-tighter uppercase italic text-zinc-900">{storeName}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{storeName}</span>
                 </div>
-                <button className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 active:scale-90 transition-all">
-                    <User className="w-5 h-5" />
-                </button>
+                <Link href={`/booking/${storeId}/perfil`} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400">
+                    <User className="w-4 h-4" />
+                </Link>
             </div>
 
-            {/* Content Area */}
+            {/* ── Content ── */}
             <main className="flex-1 overflow-x-hidden">
-                <div className="max-w-4xl mx-auto p-4 pb-36 md:p-12 md:pb-32 min-h-screen">
+                <div className="max-w-2xl mx-auto px-4 pt-5 pb-36 md:px-8 md:pt-10 md:pb-16 min-h-screen">
                     {children}
                 </div>
             </main>
 
-            {/* Mobile Nav Bottom */}
-            <nav className="md:hidden fixed bottom-6 left-6 right-6 bg-zinc-900/95 backdrop-blur-lg border border-white/10 flex justify-around p-3 z-50 rounded-3xl shadow-2xl">
+            {/* ── Mobile Bottom Nav ── */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 flex z-50">
                 {navItems.map((item) => {
                     const active = pathname === item.href;
                     return (
-                        <Link key={item.href} href={item.href} className="flex flex-col items-center relative py-1">
-                            <item.icon 
-                                className={cn("w-6 h-6 transition-all", active ? "scale-125 -translate-y-1" : "text-zinc-500")} 
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
+                        >
+                            <item.icon
+                                className={cn("w-5 h-5 transition-all", active ? "" : "text-zinc-300")}
                                 style={active ? { color: storeColor } : undefined}
                             />
-                            {active && <div className="absolute -bottom-1 w-1 h-1 rounded-full" style={{ backgroundColor: storeColor }} />}
+                            <span
+                                className={cn("text-[10px] font-medium", active ? "" : "text-zinc-300")}
+                                style={active ? { color: storeColor } : undefined}
+                            >
+                                {item.label}
+                            </span>
                         </Link>
                     );
                 })}

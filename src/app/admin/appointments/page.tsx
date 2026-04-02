@@ -2,7 +2,7 @@
 
 import AdminShell from "@/components/admin/admin-shell";
 import { Plus, ChevronLeft, ChevronRight, Clock, User, Scissors, MoreVertical, Trash2, CheckCircle, XCircle, Loader2, Info, ListTodo, X, Monitor, Trophy, DollarSign, AlertCircle, Crown, Search, Calendar, History, MessageCircle, ExternalLink, UserPlus, ArrowRight } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { format, addDays, subDays, isSameDay } from "date-fns";
 import { useSearchParams } from "next/navigation";
 import { ptBR } from "date-fns/locale";
@@ -19,7 +19,7 @@ const TIME_SLOT_HEIGHT = 100;
 const START_HOUR = 8;
 const END_HOUR = 22;
 
-export default function AppointmentsPage() {
+function AppointmentsPageContent() {
     const searchParams = useSearchParams();
     const currentStoreId = searchParams.get("storeId") || "all";
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -148,7 +148,7 @@ export default function AppointmentsPage() {
     const timeSlots = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
     return (
-        <AdminShell>
+        <>
             <div className="h-[calc(100vh-140px)] flex flex-col space-y-6">
                 {/* Header Superior */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -565,6 +565,16 @@ export default function AppointmentsPage() {
                 .custom-input:focus { border-color: #4f46e5; background: #000; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
                 select.custom-input { appearance: none; cursor: pointer; }
             `}</style>
+        </>
+    );
+}
+
+export default function AppointmentsPage() {
+    return (
+        <AdminShell>
+            <Suspense fallback={<div className="flex items-center justify-center h-[50vh] text-xs font-black uppercase tracking-widest text-zinc-600">CARREGANDO AGENDA...</div>}>
+                <AppointmentsPageContent />
+            </Suspense>
         </AdminShell>
     );
 }

@@ -146,3 +146,17 @@ export async function syncPlanStaff(planId: string, staffIds: string[]) {
         return { success: false, error: e.message };
     }
 }
+
+export async function getClientSubscriptionPlans(storeId: string) {
+    try {
+        const store = await prisma.store.findUnique({ where: { id: storeId } });
+        if (!store) return [];
+        return await prisma.subscriptionPlan.findMany({
+            where: { ownerId: store.ownerId, isActive: true },
+            include: { services: { include: { service: true } } }
+        });
+    } catch(e) {
+        console.error(e);
+        return [];
+    }
+}

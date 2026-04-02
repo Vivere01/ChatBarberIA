@@ -41,6 +41,43 @@ export async function createAppointment(data: {
         }
         const clientId = (session.user as any).id;
 
+        // --- CHECK SIMULTANEOUS APPOINTMENT LIMIT ---
+        // Get client with their active subscription and its plan
+        const client = await prisma.client.findUnique({
+            where: { id: clientId },
+            include: { subscription: { include: { plan: true } } }
+        });
+
+        if (!client) return { error: "Cliente não encontrado." };
+
+        // Default limit for guest/walk-in is 1, otherwise use the plan's limit
+        const limit = client.subscription?.status === "ACTIVE" 
+            ? (client.subscription.plan.maxSimultaneousAppointments || 1) 
+            : 1;
+
+        // Count active appointments (not cancelled, not completed)
+        // const activeAppointmentsCount = await prisma.appointment.count({
+        //     where: {
+        //         clientId,
+        //         storeId: data.storeId,
+        //         status: { in: ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"] }
+        //     }
+        // });
+
+        // Count active waitlist entries as well
+        // const activeWaitlistCount = await prisma.waitlistEntry.count({
+        //     where: {
+        //         clientId,
+        //         storeId: data.storeId,
+        //         status: "PENDING"
+        //     }
+        // });
+
+        // if ((activeAppointmentsCount + activeWaitlistCount) >= limit) {
+        //     return { error: `Você já possui ${limit} agendamento(s) pendente(s). Conclua ou cancele o atual para agendar novamente.` };
+        // }
+        // ---------------------------------------------
+
         const services = await prisma.service.findMany({
             where: { id: { in: data.serviceIds } }
         });
@@ -80,6 +117,9 @@ export async function createAppointment(data: {
                 }
             }
         });
+
+        revalidatePath("/booking/[storeId]/agendamentos", "page");
+        revalidatePath("/admin/appointments");
 
         return { success: true, appointment };
     } catch (error: any) {

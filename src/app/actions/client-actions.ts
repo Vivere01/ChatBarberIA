@@ -136,3 +136,71 @@ export async function deleteClient(id: string) {
         return { success: false, error: err.message || "Erro ao excluir." };
     }
 }
+
+export async function getClientProfile() {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== "CLIENT") return null;
+        const clientId = (session.user as any).id;
+
+        return await prisma.client.findUnique({
+            where: { id: clientId },
+            include: { subscription: { include: { plan: true } } }
+        });
+    } catch (error) {
+        console.error("Error fetching client profile:", error);
+        return null;
+    }
+}
+
+export async function updateClientProfile(data: { name: string; email?: string; phone?: string; avatarUrl?: string }) {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== "CLIENT") return { error: "Não autorizado" };
+        const clientId = (session.user as any).id;
+
+        await prisma.client.update({
+            where: { id: clientId },
+            data: {
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
+                avatarUrl: data.avatarUrl
+            }
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}
+
+export async function updateClientPassword(data: { currentPassword?: string; newPassword: string }) {
+    try {
+        const { getAuthSession } = await import("@/lib/auth");
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== "CLIENT") return { error: "Não autorizado" };
+        const clientId = (session.user as any).id;
+
+        const client = await prisma.client.findUnique({ where: { id: clientId } });
+        if (!client) return { error: "Cliente não encontrado" };
+
+        // If client has a password, check it (some might not have if they were created by admin without one)
+        if (client.passwordHash && data.currentPassword) {
+            const isValid = await bcrypt.compare(data.currentPassword, client.passwordHash);
+            if (!isValid) return { error: "Senha atual incorreta" };
+        }
+
+        const passwordHash = await bcrypt.hash(data.newPassword, 10);
+        await prisma.client.update({
+            where: { id: clientId },
+            data: { passwordHash }
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}

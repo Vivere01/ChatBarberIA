@@ -209,9 +209,6 @@ export default function ClientAppointmentsPage() {
                                                 Cancelar
                                             </button>
                                         )}
-                                        <button className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-orange-600 hover:gap-2 transition-all">
-                                            Ver Detalhes <ChevronRight className="w-3.5 h-3.5" />
-                                        </button>
                                     </div>
                                 </div>
                             </div>

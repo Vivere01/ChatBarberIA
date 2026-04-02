@@ -148,14 +148,14 @@ export default function BookingHomePage({ params }: { params: { storeId: string 
                 </div>
             </div>
 
-            {/* Fixed Action Button */}
-            <div className="fixed bottom-6 left-4 right-4 md:left-auto md:right-10 md:bottom-10 z-50">
+            {/* Fixed Action Button - acima do nav inferior em mobile */}
+            <div className="fixed bottom-28 left-4 right-4 md:left-auto md:right-10 md:bottom-10 z-40 md:z-50">
                 <Link 
                     href={`/booking/${storeId}/agendar`}
-                    className="flex items-center justify-center gap-3 w-full md:w-auto md:px-12 h-20 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[2rem] transition-all hover:scale-[1.05] active:scale-95 border-4 border-white"
-                    style={{ backgroundColor: storeColor, boxShadow: `0 25px 50px -12px ${storeColor}4D` }}
+                    className="flex items-center justify-center gap-3 w-full md:w-auto md:px-12 h-16 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[2rem] transition-all hover:scale-[1.02] active:scale-95 shadow-2xl"
+                    style={{ backgroundColor: storeColor, boxShadow: `0 20px 40px -12px ${storeColor}66` }}
                 >
-                    <Plus className="w-6 h-6" /> Novo agendamento
+                    <Plus className="w-5 h-5" /> Novo agendamento
                 </Link>
             </div>
         </div>

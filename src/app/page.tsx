@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Scissors, BarChart3, Users, Calendar, Star, Shield, Zap, ArrowRight, CheckCircle } from "lucide-react";
 import { ChatbarberLogo } from "@/components/logo";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { ThreeDScene } from "@/components/landing/ThreeDScene";
 
 const features = [
@@ -21,12 +21,12 @@ const plans = [
     { name: "Enterprise", price: "R$ 397", desc: "Para redes e franquias", features: ["Lojas ilimitadas", "IA + WhatsApp", "MCP Server", "API pública", "Suporte prioritário"] },
 ];
 
-const fadeIn = {
+const fadeIn: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,

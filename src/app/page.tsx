@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Scissors, BarChart3, Users, Calendar, Star, Shield, Zap, ArrowRight, CheckCircle } from "lucide-react";
 import { ChatbarberLogo } from "@/components/logo";
+import { motion } from "framer-motion";
+import { ThreeDScene } from "@/components/landing/ThreeDScene";
 
 const features = [
     { icon: Calendar, title: "Agenda Inteligente", desc: "Grade de horários em tempo real. Clientes agendam 24h por dia pelo mini-site da sua barbearia." },
@@ -17,11 +21,29 @@ const plans = [
     { name: "Enterprise", price: "R$ 397", desc: "Para redes e franquias", features: ["Lojas ilimitadas", "IA + WhatsApp", "MCP Server", "API pública", "Suporte prioritário"] },
 ];
 
+const fadeIn = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+};
+
+const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.1 }
+    }
+};
+
 export default function HomePage() {
     return (
         <div className="min-h-screen bg-dark-900 overflow-x-hidden">
             {/* ── Header ── */}
-            <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-dark-900/80 backdrop-blur-xl">
+            <motion.header 
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-dark-900/60 backdrop-blur-xl"
+            >
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <ChatbarberLogo className="w-8 h-8" fill="white" />
@@ -43,169 +65,263 @@ export default function HomePage() {
                         </Link>
                     </div>
                 </div>
-            </header>
+            </motion.header>
 
             {/* ── Hero ── */}
-            <section className="pt-32 pb-24 px-6 relative">
+            <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+                <ThreeDScene />
+                
                 {/* Background glow */}
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-brand-600/15 rounded-full blur-[150px] pointer-events-none" />
 
-                <div className="max-w-4xl mx-auto text-center relative">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-500/30 bg-brand-500/10 text-brand-400 text-sm mb-8 animate-fade-in">
+                <motion.div 
+                    initial="hidden"
+                    animate="visible"
+                    variants={staggerContainer}
+                    className="max-w-5xl mx-auto px-6 text-center relative z-10"
+                >
+                    <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-sm mb-8 backdrop-blur-md">
                         <Zap className="w-3.5 h-3.5" />
-                        <span>Com IA integrada ao WhatsApp</span>
-                    </div>
-                    <h1 className="font-display text-5xl md:text-7xl font-bold leading-[1.05] tracking-tight mb-6 animate-slide-up">
-                        A plataforma que sua{" "}
+                        <span>A primeira IA com visão 3D do seu salão</span>
+                    </motion.div>
+                    
+                    <motion.h1 variants={fadeIn} className="font-display text-5xl md:text-8xl font-bold leading-[1.05] tracking-tight mb-8">
+                        A evolução da sua{" "}
                         <span className="brand-gradient-text">barbearia</span>{" "}
-                        merecia
-                    </h1>
-                    <p className="text-xl text-zinc-400 leading-relaxed max-w-2xl mx-auto mb-10">
-                        Gestão completa de agendamentos, financeiro, clientes e equipe.
-                        Com IA treinada nos dados da sua barbearia e integração nativa ao WhatsApp.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link href="/register" className="group flex items-center gap-2 bg-brand-gradient text-white px-8 py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition-all hover:scale-105 shadow-brand">
-                            Começar Agora
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </motion.h1>
+                    
+                    <motion.p variants={fadeIn} className="text-xl md:text-2xl text-zinc-300/80 leading-relaxed max-w-3xl mx-auto mb-12">
+                        Gestão completa, agendamentos ilimitados e uma IA que 
+                        transforma o WhatsApp na sua recepcionista 24 horas.
+                    </motion.p>
+                    
+                    <motion.div variants={fadeIn} className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                        <Link href="/register" className="group relative flex items-center gap-2 bg-brand-gradient text-white px-8 py-4 rounded-full font-semibold text-lg overflow-hidden shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:shadow-[0_0_60px_rgba(139,92,246,0.5)] transition-all hover:scale-105">
+                            <span className="relative z-10 flex items-center gap-2">
+                                Experimentar Grátis
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </span>
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                         </Link>
-                        <Link href="/login" className="flex items-center gap-2 border border-white/10 text-zinc-300 px-8 py-4 rounded-xl font-semibold text-lg hover:border-white/20 hover:text-white transition-all">
-                            Fazer Login
+                        <Link href="#features" className="flex items-center gap-2 px-8 py-4 rounded-full font-semibold text-lg text-zinc-300 hover:text-white hover:bg-white/5 transition-colors">
+                            Ver Funcionalidades
                         </Link>
-                    </div>
-                    <p className="mt-6 text-sm text-zinc-500">14 dias grátis · Sem cartão · Cancele quando quiser</p>
-                </div>
+                    </motion.div>
+                    <motion.p variants={fadeIn} className="mt-8 text-sm text-zinc-500">14 dias grátis · Sem cartão de crédito</motion.p>
+                </motion.div>
+                
+                {/* Scroll indicator */}
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2, duration: 1 }}
+                    className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-500"
+                >
+                    <span className="text-xs uppercase tracking-widest">Role para baixo</span>
+                    <motion.div 
+                        animate={{ y: [0, 8, 0] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                        className="w-5 h-8 border-2 border-zinc-700 rounded-full flex justify-center p-1"
+                    >
+                        <div className="w-1 h-2 bg-zinc-500 rounded-full" />
+                    </motion.div>
+                </motion.div>
             </section>
 
             {/* ── Features ── */}
-            <section id="features" className="py-24 px-6">
+            <section id="features" className="py-32 px-6 relative z-10 bg-dark-900">
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="font-display text-4xl font-bold mb-4">Tudo que você precisa</h2>
-                        <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
-                            De agendamentos a IA — um ecossistema completo para barbearias modernas.
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={fadeIn}
+                        className="text-center mb-20"
+                    >
+                        <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">Tudo que você precisa em um só lugar</h2>
+                        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto">
+                            Esqueça planilhas e sistemas complicados. Nossa plataforma foi desenhada
+                            para barbearias modernas e exigentes.
                         </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </motion.div>
+
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-50px" }}
+                        variants={staggerContainer}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    >
                         {features.map((f, i) => (
-                            <div
+                            <motion.div
                                 key={i}
-                                className="glass-card rounded-2xl p-6 hover:border-brand-500/20 transition-all duration-300 hover:-translate-y-1 group"
+                                variants={fadeIn}
+                                className="group relative glass-card rounded-3xl p-8 hover:bg-white/[0.02] transition-colors overflow-hidden"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-4 group-hover:bg-brand-500/15 transition-colors">
-                                    <f.icon className="w-6 h-6 text-brand-400" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                
+                                <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                                    <f.icon className="w-7 h-7 text-brand-400" />
                                 </div>
-                                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                                <p className="text-zinc-400 text-sm leading-relaxed">{f.desc}</p>
-                            </div>
+                                <h3 className="font-display font-semibold text-xl mb-3 text-white">{f.title}</h3>
+                                <p className="text-zinc-400 text-base leading-relaxed group-hover:text-zinc-300 transition-colors">{f.desc}</p>
+                            </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* ── AI Section ── */}
-            <section id="ai" className="py-24 px-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-500/3 to-transparent pointer-events-none" />
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs mb-6">
+            <section id="ai" className="py-32 px-6 relative overflow-hidden bg-zinc-950">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-600/10 rounded-full blur-[120px] pointer-events-none" />
+                
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center relative z-10">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={staggerContainer}
+                    >
+                        <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs mb-6">
                             <Zap className="w-3 h-3" />
                             IA Vertical para Barbearias
-                        </div>
-                        <h2 className="font-display text-4xl font-bold mb-6">
-                            IA que conhece{" "}
-                            <span className="brand-gradient-text">cada detalhe</span>{" "}
-                            da sua barbearia
-                        </h2>
-                        <p className="text-zinc-400 leading-relaxed mb-8">
-                            Conecte o WhatsApp da sua barbearia ao nosso CRM inteligente. A IA aprende automaticamente
-                            com os dados dos seus clientes — agendamentos, preferências, histórico — e atende com precisão
-                            e personalização que antes exigia uma recepcionista dedicada.
-                        </p>
-                        <ul className="space-y-3">
-                            {["Treinamento automático com dados reais da sua barbearia", "Integração WhatsApp via Evolution API", "MCP Server para comunicação precisa com a IA", "API pública para integrações personalizadas"].map((item) => (
-                                <li key={item} className="flex items-center gap-3 text-sm text-zinc-300">
-                                    <CheckCircle className="w-4 h-4 text-brand-400 flex-shrink-0" />
+                        </motion.div>
+                        <motion.h2 variants={fadeIn} className="font-display text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                            A inteligência que{" "}
+                            <span className="brand-gradient-text">escuta os seus clientes</span>
+                        </motion.h2>
+                        <motion.p variants={fadeIn} className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            Nossa IA atende seus clientes no WhatsApp, entende o estilo de corte,
+                            oferece produtos complementares e agenda horários perfeitamente, sem erros ou conflitos.
+                        </motion.p>
+                        <motion.ul variants={staggerContainer} className="space-y-4">
+                            {["Treinamento automático com seus dados reais", "Integração nativa de WhatsApp sem custo extra", "Respostas empáticas e contextualizadas", "Vendas cruzadas automáticas"].map((item) => (
+                                <motion.li key={item} variants={fadeIn} className="flex items-center gap-3 text-base text-zinc-300 group">
+                                    <CheckCircle className="w-5 h-5 text-brand-400 group-hover:scale-110 transition-transform" />
                                     {item}
-                                </li>
+                                </motion.li>
                             ))}
-                        </ul>
-                    </div>
-                    <div className="glass-card rounded-2xl p-6 border border-purple-500/20">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                            <span className="text-xs text-zinc-400">IA Online · Treinada com seus dados</span>
+                        </motion.ul>
+                    </motion.div>
+
+                    <motion.div 
+                        initial={{ opacity: 0, x: 50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="glass-card rounded-3xl p-8 border border-purple-500/20 shadow-2xl shadow-purple-900/20 relative"
+                    >
+                        <div className="absolute -top-4 -right-4 w-20 h-20 bg-brand-500 rounded-full blur-[40px] opacity-50" />
+                        
+                        <div className="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                            </div>
+                            <div className="ml-4 flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                <span className="text-xs font-medium text-zinc-400">ChatBarber AI - Online</span>
+                            </div>
                         </div>
-                        <div className="space-y-3">
+                        
+                        <div className="space-y-6">
                             {[
-                                { role: "client", msg: "Oi! Quero agendar um corte pro sábado" },
-                                { role: "ai", msg: "Olá! 😊 Temos horários disponíveis no sábado: 09h, 11h e 15h com o João. Qual prefere?" },
-                                { role: "client", msg: "15h tá ótimo!" },
-                                { role: "ai", msg: "Perfeito! Agendei o corte + barba pra você às 15h de sábado com o João. Confirmação enviada! ✅" },
+                                { role: "client", msg: "Oi! Tem horário pro sábado à tarde?" },
+                                { role: "ai", msg: "Olá, Pedro! Tudo bom? 😊 Temos sim! No sábado o João tem horários às 14h, 15:30h e 17h. Quer que eu reserve o de 15:30h para o seu Degradê de sempre?" },
+                                { role: "client", msg: "Isso mesmo, valeu!" },
+                                { role: "ai", msg: "Agendado, Pedro! ✅ Sábado às 15:30 com o João. Te mando um lembrete no dia. Pode confirmar?" },
                             ].map((m, i) => (
-                                <div key={i} className={`flex ${m.role === "ai" ? "justify-start" : "justify-end"}`}>
-                                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${m.role === "ai"
-                                        ? "bg-dark-600 text-zinc-200 rounded-tl-sm"
+                                <motion.div 
+                                    key={i} 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.2 + i * 0.2 }}
+                                    className={`flex ${m.role === "ai" ? "justify-start" : "justify-end"}`}
+                                >
+                                    <div className={`max-w-[85%] px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${m.role === "ai"
+                                        ? "bg-dark-600 border border-white/5 text-zinc-200 rounded-tl-sm"
                                         : "bg-brand-gradient text-white rounded-tr-sm"
                                         }`}>
                                         {m.msg}
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* ── Plans ── */}
-            <section id="plans" className="py-24 px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="font-display text-4xl font-bold mb-4">Planos simples e transparentes</h2>
-                        <p className="text-zinc-400">Sem surpresas. Cancele quando quiser.</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {plans.map((plan) => (
-                            <div key={plan.name} className={`glass-card rounded-2xl p-6 relative ${plan.highlight ? "border-brand-500/40 shadow-brand" : ""}`}>
+            <section id="plans" className="py-32 px-6 bg-dark-900">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={fadeIn}
+                        className="text-center mb-20"
+                    >
+                        <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">Planos que acompanham seu crescimento</h2>
+                        <p className="text-zinc-400 text-lg">Sem taxas escondidas. Cancele quando quiser.</p>
+                    </motion.div>
+                    
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={staggerContainer}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center"
+                    >
+                        {plans.map((plan, index) => (
+                            <motion.div 
+                                key={plan.name} 
+                                variants={fadeIn}
+                                className={`glass-card rounded-3xl p-8 relative transition-all duration-300 hover:-translate-y-2 ${plan.highlight ? "border-brand-500/50 shadow-[0_0_50px_rgba(139,92,246,0.15)] md:-mt-8 md:mb-8" : "border-white/5"}`}
+                            >
                                 {plan.highlight && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gradient text-white text-xs px-3 py-1 rounded-full font-semibold">
+                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-gradient text-white text-xs px-4 py-1.5 rounded-full font-bold uppercase tracking-wider shadow-lg">
                                         Mais Popular
                                     </div>
                                 )}
-                                <h3 className="font-display font-bold text-xl mb-1">{plan.name}</h3>
-                                <p className="text-zinc-500 text-sm mb-4">{plan.desc}</p>
-                                <div className="text-3xl font-bold mb-1">{plan.price}</div>
-                                <div className="text-zinc-500 text-sm mb-6">/mês</div>
-                                <ul className="space-y-2.5 mb-8">
+                                <h3 className="font-display font-bold text-2xl mb-2">{plan.name}</h3>
+                                <p className="text-zinc-500 text-sm mb-6 h-10">{plan.desc}</p>
+                                <div className="flex items-baseline gap-1 mb-8">
+                                    <span className="text-4xl md:text-5xl font-bold">{plan.price}</span>
+                                    <span className="text-zinc-500 text-sm font-medium">/mês</span>
+                                </div>
+                                <ul className="space-y-4 mb-10 h-64">
                                     {plan.features.map((f) => (
-                                        <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
-                                            <CheckCircle className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                                            {f}
+                                        <li key={f} className="flex items-start gap-3 text-sm text-zinc-300">
+                                            <CheckCircle className="w-5 h-5 text-brand-400 flex-shrink-0" />
+                                            <span className="leading-tight">{f}</span>
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/register" className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${plan.highlight
-                                    ? "bg-brand-gradient text-white hover:opacity-90"
-                                    : "border border-white/10 text-zinc-300 hover:border-white/20 hover:text-white"
+                                <Link href="/register" className={`block text-center py-4 rounded-xl font-semibold text-base transition-all ${plan.highlight
+                                    ? "bg-brand-gradient text-white hover:opacity-90 shadow-lg shadow-brand-500/25"
+                                    : "bg-white/5 text-white hover:bg-white/10"
                                     }`}>
-                                    Começar Grátis
+                                    Assinar {plan.name}
                                 </Link>
-                            </div>
+                            </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* ── Footer ── */}
-            <footer className="border-t border-white/5 py-12 px-6">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <ChatbarberLogo className="w-6 h-6" fill="white" />
-                        <span className="font-display font-bold">
+            <footer className="border-t border-white/5 py-12 px-6 bg-zinc-950">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-3">
+                        <ChatbarberLogo className="w-7 h-7" fill="white" />
+                        <span className="font-display font-bold text-lg">
                             Chat<span className="brand-gradient-text">Barber</span>
                         </span>
                     </div>
-                    <p className="text-zinc-500 text-sm">© 2026 ChatBarber. Todos os direitos reservados.</p>
+                    <p className="text-zinc-500 text-sm">© 2026 ChatBarber. Feito para barbeiros de elite.</p>
                 </div>
             </footer>
         </div>

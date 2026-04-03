@@ -1,4 +1,6 @@
+/// <reference path="../../three-elements.d.ts" />
 "use client";
+import React from 'react';
 
 import { Canvas } from "@react-three/fiber";
 import { Sphere, MeshDistortMaterial, Float, Stars, Sparkles } from "@react-three/drei";

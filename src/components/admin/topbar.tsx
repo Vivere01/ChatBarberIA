@@ -142,7 +142,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
                                         Configurações do Perfil
                                     </Link>
                                     <button
-                                        onClick={() => signOut({ callbackUrl: "/login" })}
+                                        onClick={() => signOut({ callbackUrl: "/" })}
                                         className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/5"
                                     >
                                         <LogOut className="w-4 h-4" />

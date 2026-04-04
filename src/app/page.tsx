@@ -155,14 +155,24 @@ export default function HomePage() {
                         {features.map((f, i) => (
                             <motion.div
                                 key={i}
+                                initial="hidden"
+                                whileInView="visible"
+                                whileHover="hover"
+                                viewport={{ once: true, margin: "-50px" }}
                                 variants={fadeIn}
                                 className="group relative glass-card rounded-3xl p-8 hover:bg-white/[0.02] transition-colors overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 
-                                <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                                <motion.div 
+                                    className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500"
+                                    variants={{
+                                        hover: { rotate: 360 }
+                                    }}
+                                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                                >
                                     <f.icon className="w-7 h-7 text-brand-400" />
-                                </div>
+                                </motion.div>
                                 <h3 className="font-display font-semibold text-xl mb-3 text-white">{f.title}</h3>
                                 <p className="text-zinc-400 text-base leading-relaxed group-hover:text-zinc-300 transition-colors">{f.desc}</p>
                             </motion.div>

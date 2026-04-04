@@ -53,7 +53,7 @@ export async function registerOwner(data: z.infer<typeof registerSchema>) {
     } catch (e: any) {
         console.error("Registration error:", e);
         if (e instanceof z.ZodError) {
-            return { error: e.errors[0].message };
+            return { error: e.issues[0].message };
         }
         return { error: "Ocorreu um erro ao criar sua conta." };
     }

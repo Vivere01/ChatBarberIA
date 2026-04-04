@@ -120,7 +120,10 @@ export default function BookingLayout({ children, params }: BookingLayoutProps) 
 
                 <div className="p-3 border-t border-zinc-100">
                     <button
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={async () => {
+                            await signOut({ redirect: false });
+                            window.location.href = window.location.origin;
+                        }}
                         className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-zinc-50 hover:text-red-500 transition-all"
                     >
                         <LogOut className="w-4 h-4" />

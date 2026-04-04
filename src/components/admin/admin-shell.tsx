@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/admin/sidebar";
 import { Topbar } from "@/components/admin/topbar";
+import { SubscriptionBarrier } from "@/components/admin/subscription-barrier";
 import { ReactNode, useState, Suspense } from "react";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +10,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen w-full bg-dark-900 overflow-hidden">
+        <div className="flex h-screen w-full bg-dark-900 overflow-hidden relative">
+            <SubscriptionBarrier />
+            
             {/* Sidebar with mobile Drawer logic */}
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             

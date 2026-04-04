@@ -28,13 +28,14 @@ export async function POST(req: Request) {
         const ownerId = session.metadata?.ownerId || session.client_reference_id;
 
         if (ownerId) {
+            const sub = subscription as any;
             await prisma.owner.update({
                 where: { id: ownerId },
                 data: {
-                    stripeSubscriptionId: subscription.id,
-                    stripeCustomerId: subscription.customer as string,
-                    stripePriceId: subscription.items.data[0].price.id,
-                    stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                    stripeSubscriptionId: sub.id,
+                    stripeCustomerId: sub.customer as string,
+                    stripePriceId: sub.items.data[0].price.id,
+                    stripeCurrentPeriodEnd: new Date(sub.current_period_end * 1000),
                 },
             });
         }
@@ -44,10 +45,11 @@ export async function POST(req: Request) {
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
         if (subscription) {
+            const sub = subscription as any;
             await prisma.owner.update({
-                where: { stripeSubscriptionId: subscription.id },
+                where: { stripeSubscriptionId: sub.id },
                 data: {
-                    stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                    stripeCurrentPeriodEnd: new Date(sub.current_period_end * 1000),
                 },
             });
         }

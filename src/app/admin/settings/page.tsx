@@ -112,10 +112,8 @@ export default function SettingsPage() {
                         {[
                             { label: "Geral", icon: Settings },
                             { label: "Horários", icon: Clock },
-                            { label: "Notificações", icon: Bell },
                             { label: "Pagamentos", icon: CreditCard },
                             { label: "Aparência", icon: Paintbrush },
-                            { label: "Segurança", icon: Shield },
                         ].map((item) => (
                             <button
                                 key={item.label}
@@ -321,12 +319,7 @@ export default function SettingsPage() {
                                     </div>
                                 )}
 
-                                {(activeTab === "Notificações" || activeTab === "Segurança") && (
-                                    <div className="glass-card rounded-3xl p-16 flex flex-col items-center justify-center text-center border border-white/5 opacity-40">
-                                        <Settings className="w-12 h-12 text-zinc-600 mb-6" />
-                                        <h2 className="font-bold text-white uppercase tracking-widest text-xs">Área em Desenvolvimento</h2>
-                                    </div>
-                                )}
+
                             </div>
                         )}
                     </div>

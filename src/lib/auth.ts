@@ -25,13 +25,18 @@ export const authOptions: NextAuthOptions = {
                 if (!credentials?.email || !credentials?.password) return null;
 
                 // Acesso rápido para desenvolvimento/homologação
-                if (credentials.email === "admin@gmail.com" && credentials.password === "admin") {
-                    const existingOwner = await prisma.owner.findUnique({ where: { email: "admin@gmail.com" } });
+                if ((credentials.email === "admin@gmail.com" || credentials.email === "admin") && credentials.password === "123456") {
+                    const existingOwner = await prisma.owner.findFirst({ 
+                        where: { 
+                            OR: [{ email: "admin@gmail.com" }, { email: "admin" }] 
+                        } 
+                    });
                     return {
                         id: existingOwner?.id || "admin-dev-id",
                         email: "admin@gmail.com",
-                        name: "Administrador ChatBarber",
+                        name: "Desenvolvedor Admin",
                         role: "OWNER",
+                        isDev: true, // Special flag for the developer
                     };
                 }
 

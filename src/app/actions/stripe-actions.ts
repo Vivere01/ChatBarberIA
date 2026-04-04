@@ -69,6 +69,11 @@ export async function getSubscriptionStatus() {
         const session = await getAuthSession();
         if (!session?.user) return { active: false };
 
+        // Bypass for developer account
+        if (session.user.email === "admin@gmail.com") {
+            return { active: true, isDev: true };
+        }
+
         const userId = (session.user as any).id;
         const owner = await prisma.owner.findUnique({
             where: { id: userId },

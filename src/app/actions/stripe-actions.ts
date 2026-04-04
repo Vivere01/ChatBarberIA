@@ -4,12 +4,19 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { getAuthSession } from "@/lib/auth";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-04-10" as any,
-});
+const getStripe = () => {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+        throw new Error("STRIPE_SECRET_KEY is not defined");
+    }
+    return new Stripe(key, {
+        apiVersion: "2024-04-10" as any,
+    });
+};
 
 export async function createCheckoutSession(priceId: string) {
     try {
+        const stripe = getStripe();
         const session = await getAuthSession();
         if (!session?.user) {
             return { error: "AUTH_REQUIRED" };

@@ -3,15 +3,27 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-04-10" as any,
-});
+// Force the route to be dynamic to avoid build-time initialization errors
+export const dynamic = "force-dynamic";
+
+// Initialize Stripe lazily to avoid errors when environment variables are missing during build
+const getStripe = () => {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+        // During build time, this might be missing, but this function should only be called at runtime
+        throw new Error("STRIPE_SECRET_KEY is not defined");
+    }
+    return new Stripe(key, {
+        apiVersion: "2024-04-10" as any,
+    });
+};
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(req: Request) {
     const body = await req.text();
     const sig = headers().get("stripe-signature")!;
+    const stripe = getStripe();
 
     let event: Stripe.Event;
 

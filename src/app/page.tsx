@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Scissors, BarChart3, Users, Calendar, Star, Shield, Zap, ArrowRight, CheckCircle } from "lucide-react";
+import { Scissors, BarChart3, Users, Calendar, Star, Shield, Zap, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { ChatbarberLogo } from "@/components/logo";
 import { motion, Variants } from "framer-motion";
 import { ThreeDScene } from "@/components/landing/ThreeDScene";

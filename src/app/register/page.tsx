@@ -4,20 +4,77 @@ import { Scissors, Loader2, ArrowRight } from "lucide-react";
 import { ChatbarberLogo } from "@/components/logo";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { registerOwner } from "@/app/actions/auth-actions";
+import { signIn } from "next-auth/react";
+import { createCheckoutSession } from "@/app/actions/stripe-actions";
 
 export default function RegisterPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const plan = searchParams.get("plan");
+
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    // Form states
+    const [formData, setFormData] = useState({
+        name: "",
+        phone: "",
+        storeName: "",
+        email: "",
+        password: ""
+    });
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
+        setError("");
+
+        try {
+            // 1. Register the owner
+            const res = await registerOwner(formData);
+
+            if (res.error) {
+                setError(res.error);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Sign in automatically
+            const signInRes = await signIn("owner-login", {
+                email: formData.email,
+                password: formData.password,
+                redirect: false
+            });
+
+            if (signInRes?.error) {
+                setError("Erro ao entrar automaticamente. Por favor, faça login.");
+                setLoading(false);
+                return;
+            }
+
+            // 3. If there's a plan, initiate Stripe Checkout
+            if (plan) {
+                const stripeRes = await createCheckoutSession(plan);
+                if (stripeRes.url) {
+                    window.location.href = stripeRes.url;
+                    return;
+                } else if (stripeRes.error) {
+                    setError("Erro ao iniciar assinatura: " + stripeRes.error);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // 4. If no plan or stripe fails but registered, go to dashboard
             router.push("/admin/dashboard");
-        }, 1500);
+            router.refresh();
+        } catch (err) {
+            console.error(err);
+            setError("Ocorreu um erro inesperado.");
+            setLoading(false);
+        }
     }
 
     return (
@@ -71,6 +128,12 @@ export default function RegisterPage() {
                     <h1 className="font-display text-3xl font-bold mb-2">Crie sua conta</h1>
                     <p className="text-zinc-400 mb-8">Inicie seu teste grátis de 14 dias hoje mesmo.</p>
 
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-6">
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -79,6 +142,8 @@ export default function RegisterPage() {
                                     type="text"
                                     placeholder="Seu nome"
                                     required
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-all"
                                 />
                             </div>
@@ -88,6 +153,8 @@ export default function RegisterPage() {
                                     type="tel"
                                     placeholder="(11) 90000-0000"
                                     required
+                                    value={formData.phone}
+                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-all"
                                 />
                             </div>
@@ -99,6 +166,8 @@ export default function RegisterPage() {
                                 type="text"
                                 placeholder="Ex: Barbearia Royal"
                                 required
+                                value={formData.storeName}
+                                onChange={e => setFormData({ ...formData, storeName: e.target.value })}
                                 className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-all"
                             />
                         </div>
@@ -109,6 +178,8 @@ export default function RegisterPage() {
                                 type="email"
                                 placeholder="seu@email.com"
                                 required
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-all"
                             />
                         </div>
@@ -119,6 +190,8 @@ export default function RegisterPage() {
                                 type="password"
                                 placeholder="••••••••"
                                 required
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-all"
                             />
                         </div>
@@ -130,7 +203,7 @@ export default function RegisterPage() {
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                 <>
-                                    Criar minha conta <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    {plan ? "Escolher Cartão & Iniciar Teste" : "Criar minha conta"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </>
                             )}
                         </button>

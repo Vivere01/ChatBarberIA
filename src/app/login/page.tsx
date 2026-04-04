@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Scissors, Eye, EyeOff, Loader2 } from "lucide-react";
 import { ChatbarberLogo } from "@/components/logo";
+import { createCheckoutSession } from "@/app/actions/stripe-actions";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const plan = searchParams.get("plan");
+
     const [email, setEmail] = useState("admin@gmail.com");
     const [password, setPassword] = useState("admin");
     const [showPass, setShowPass] = useState(false);
@@ -19,16 +23,33 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         setError("");
-        const res = await signIn("owner-login", {
-            email,
-            password,
-            redirect: false,
-        });
-        setLoading(false);
-        if (res?.error) {
-            setError("Email ou senha incorretos.");
-        } else {
-            router.push("/admin/dashboard");
+        
+        try {
+            const res = await signIn("owner-login", {
+                email,
+                password,
+                redirect: false,
+            });
+
+            if (res?.error) {
+                setError("Email ou senha incorretos.");
+                setLoading(false);
+            } else {
+                // If there's a plan in the URL, redirect to checkout
+                if (plan) {
+                    const stripeRes = await createCheckoutSession(plan);
+                    if (stripeRes.url) {
+                        window.location.href = stripeRes.url;
+                        return;
+                    }
+                }
+                
+                router.push("/admin/dashboard");
+                router.refresh();
+            }
+        } catch (err) {
+            setError("Ocorreu um erro ao fazer login.");
+            setLoading(false);
         }
     }
 
@@ -132,7 +153,7 @@ export default function LoginPage() {
 
                     <p className="mt-8 text-center text-sm text-zinc-500">
                         Não tem uma conta?{" "}
-                        <Link href="/register" className="text-brand-400 hover:text-brand-300 transition-colors font-medium">
+                        <Link href={`/register${plan ? `?plan=${plan}` : ''}`} className="text-brand-400 hover:text-brand-300 transition-colors font-medium">
                             Criar conta grátis
                         </Link>
                     </p>

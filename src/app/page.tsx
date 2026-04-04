@@ -6,6 +6,10 @@ import { ChatbarberLogo } from "@/components/logo";
 import { motion, Variants } from "framer-motion";
 import { ThreeDScene } from "@/components/landing/ThreeDScene";
 
+import { useRouter } from "next/navigation";
+import { createCheckoutSession } from "@/app/actions/stripe-actions";
+import { useState } from "react";
+
 const features = [
     { icon: Calendar, title: "Agenda Inteligente", desc: "Grade de horários em tempo real. Clientes agendam 24h por dia pelo mini-site da sua barbearia." },
     { icon: BarChart3, title: "Dashboard Financeiro", desc: "Visibilidade total: receitas, custos, comissões e fluxo de caixa num só lugar." },
@@ -16,9 +20,28 @@ const features = [
 ];
 
 const plans = [
-    { name: "Starter", price: "R$ 97", desc: "Ideal para barbearias independentes", features: ["1 loja", "até 200 clientes", "Agenda online", "Financeiro básico"] },
-    { name: "Pro", price: "R$ 197", desc: "Para barbearias em crescimento", features: ["3 lojas", "clientes ilimitados", "Tudo do Starter", "Gamificação", "IndicaAí", "Relatórios avançados"], highlight: true },
-    { name: "Enterprise", price: "R$ 397", desc: "Para redes e franquias", features: ["Lojas ilimitadas", "IA + WhatsApp", "MCP Server", "API pública", "Suporte prioritário"] },
+    { 
+        name: "Starter", 
+        price: "R$ 97", 
+        priceId: "price_1TISwOF9fVZA3i56pwHbDjW9",
+        desc: "Ideal para barbearias independentes", 
+        features: ["1 loja", "até 200 clientes", "Agenda online", "Financeiro básico"] 
+    },
+    { 
+        name: "Pro", 
+        price: "R$ 197", 
+        priceId: "price_1TISxDF9fVZA3i56U6ZPO5aW",
+        desc: "Para barbearias em crescimento", 
+        features: ["3 lojas", "clientes ilimitados", "Tudo do Starter", "Gamificação", "IndicaAí", "Relatórios avançados"], 
+        highlight: true 
+    },
+    { 
+        name: "Enterprise", 
+        price: "R$ 397", 
+        priceId: "price_1TISxDF9fVZA3i56w5OzipDP",
+        desc: "Para redes e franquias", 
+        features: ["Lojas ilimitadas", "IA + WhatsApp", "MCP Server", "API pública", "Suporte prioritário"] 
+    },
 ];
 
 const fadeIn: Variants = {
@@ -35,6 +58,26 @@ const staggerContainer: Variants = {
 };
 
 export default function HomePage() {
+    const router = useRouter();
+    const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+    async function handleSubscribe(priceId: string) {
+        setLoadingPlan(priceId);
+        const res = await createCheckoutSession(priceId);
+        
+        if (res.error === "AUTH_REQUIRED") {
+            router.push(`/register?plan=${priceId}`);
+            return;
+        }
+
+        if (res.url) {
+            window.location.href = res.url;
+        } else {
+            alert(res.error || "Erro ao processar assinatura");
+            setLoadingPlan(null);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-dark-900 overflow-x-hidden">
             {/* ── Header ── */}
@@ -310,12 +353,16 @@ export default function HomePage() {
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/register" className={`block text-center py-4 rounded-xl font-semibold text-base transition-all ${plan.highlight
+                                <button 
+                                    onClick={() => handleSubscribe(plan.priceId)}
+                                    disabled={loadingPlan === plan.priceId}
+                                    className={`w-full block text-center py-4 rounded-xl font-semibold text-base transition-all disabled:opacity-50 ${plan.highlight
                                     ? "bg-brand-gradient text-white hover:opacity-90 shadow-lg shadow-brand-500/25"
                                     : "bg-white/5 text-white hover:bg-white/10"
-                                    }`}>
-                                    Assinar {plan.name}
-                                </Link>
+                                    }`}
+                                >
+                                    {loadingPlan === plan.priceId ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `Assinar ${plan.name}`}
+                                </button>
                             </motion.div>
                         ))}
                     </motion.div>

@@ -131,6 +131,13 @@ model Owner {
   celcashToken      String?
   celcashPublicToken String?
   aiContext         AiContext?
+  
+  // Stripe Subscription
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+
 
   @@map("owners")
 }

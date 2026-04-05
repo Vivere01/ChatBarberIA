@@ -447,6 +447,7 @@ model SubscriptionPlan {
   activeDays                Int[]     @default([1, 2, 3, 4, 5, 6]) // 0=Sunday, 1=Monday... (Default Mon-Sat)
   maxSimultaneousAppointments Int     @default(1)    // Qtd agendamentos simultâneos/visíveis
   galaxId                   String?   // ID no Celcash/GalaxPay
+  checkoutUrl               String?   // Link de pagamento direto (Celcoin/GalaxPay)
   isActive                  Boolean   @default(true)
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt

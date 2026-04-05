@@ -71,6 +71,7 @@ export default function PlanManagementPage() {
         activeDays: [1, 2, 3, 4, 5, 6],
         maxSimultaneousAppointments: 1,
         galaxId: "",
+        checkoutUrl: "",
         isActive: true
     });
 
@@ -102,6 +103,7 @@ export default function PlanManagementPage() {
                 activeDays: planData.activeDays,
                 maxSimultaneousAppointments: planData.maxSimultaneousAppointments,
                 galaxId: planData.galaxId || "",
+                checkoutUrl: planData.checkoutUrl || "",
                 isActive: planData.isActive
             });
             setSelectedServices(planData.services.map((s: any) => s.serviceId));
@@ -279,6 +281,18 @@ export default function PlanManagementPage() {
                                         onChange={(e) => setFormData({ ...formData, galaxId: e.target.value })}
                                         placeholder="Ex: 54321"
                                         className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-brand-400 block mb-2 flex items-center gap-1">
+                                        Link de Checkout (Celcoin)
+                                        <Zap className="w-3 h-3" />
+                                    </label>
+                                    <input 
+                                        value={formData.checkoutUrl}
+                                        onChange={(e) => setFormData({ ...formData, checkoutUrl: e.target.value })}
+                                        placeholder="https://pay.celcoin.com.br/..."
+                                        className="w-full h-14 bg-dark-700 border border-brand-500/20 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
                                     />
                                 </div>
                             </div>

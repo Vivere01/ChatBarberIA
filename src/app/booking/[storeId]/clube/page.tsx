@@ -116,7 +116,16 @@ export default function ClubePage() {
                                 )}
                             </div>
                             
-                            <button className="w-full py-4 rounded-xl font-black italic uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 group-hover:bg-zinc-900 group-hover:text-white bg-zinc-50 text-zinc-900 mt-auto">
+                            <button 
+                                onClick={() => {
+                                    if (plan.checkoutUrl) {
+                                        window.open(plan.checkoutUrl, "_blank");
+                                    } else {
+                                        alert("Link de checkout não configurado para este plano.");
+                                    }
+                                }}
+                                className="w-full py-4 rounded-xl font-black italic uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 group-hover:bg-zinc-900 group-hover:text-white bg-zinc-50 text-zinc-900 mt-auto"
+                            >
                                 <Shield className="w-4 h-4" /> Assinar Agora
                             </button>
                         </div>

@@ -21,7 +21,8 @@ export default function SubscriptionsPage() {
         price: 0,
         potAmount: 0,
         chipsPerService: 1,
-        galaxId: ""
+        galaxId: "",
+        checkoutUrl: ""
     });
 
     useEffect(() => {
@@ -42,7 +43,7 @@ export default function SubscriptionsPage() {
         if (res.success) {
             loadPlans();
             setIsModalOpen(false);
-            setFormData({ name: "", description: "", price: 0, potAmount: 0, chipsPerService: 1, galaxId: "" });
+            setFormData({ name: "", description: "", price: 0, potAmount: 0, chipsPerService: 1, galaxId: "", checkoutUrl: "" });
         } else { alert(res.error); }
         setLoading(false);
     };
@@ -189,6 +190,15 @@ export default function SubscriptionsPage() {
                                 onChange={(e) => setFormData({ ...formData, galaxId: e.target.value })}
                                 placeholder="ID do plano no gateway"
                                 className="w-full h-14 bg-dark-700 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-brand-500 block mb-2">Link de Pagamento (Checkout)</label>
+                            <input 
+                                value={formData.checkoutUrl}
+                                onChange={(e) => setFormData({ ...formData, checkoutUrl: e.target.value })}
+                                placeholder="https://pay.celcoin.com.br/..."
+                                className="w-full h-14 bg-dark-700 border border-brand-500/20 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500 outline-none transition-all"
                             />
                         </div>
                     </div>

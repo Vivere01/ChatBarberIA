@@ -50,6 +50,7 @@ export async function createSubscriptionPlan(data: {
     activeDays?: number[];
     maxSimultaneousAppointments?: number;
     galaxId?: string;
+    checkoutUrl?: string;
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
@@ -77,6 +78,7 @@ export async function updateSubscriptionPlan(id: string, data: Partial<{
     activeDays: number[];
     maxSimultaneousAppointments: number;
     galaxId: string;
+    checkoutUrl: string;
     isActive: boolean;
 }>) {
     try {

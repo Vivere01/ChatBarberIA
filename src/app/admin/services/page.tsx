@@ -1,7 +1,7 @@
 "use client";
 
 import AdminShell from "@/components/admin/admin-shell";
-import { Plus, Search, MoreVertical, Scissors, Clock, Save, Loader2, DollarSign, Wrench, Edit2, Trash2, Building2 } from "lucide-react";
+import { Plus, Search, MoreVertical, Scissors, Clock, Save, Loader2, DollarSign, Wrench, Edit2, Trash2, Building2, CheckCircle } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { formatCurrency } from "@/lib/utils";
@@ -20,13 +20,20 @@ export default function ServicesPage() {
     const [fetching, setFetching] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string;
+        description: string;
+        price: string;
+        duration: string;
+        category: string;
+        storeIds: string[];
+    }>({
         name: "",
         description: "",
         price: "0",
         duration: "30",
         category: "HAIR",
-        storeId: "",
+        storeIds: [],
     });
 
     useEffect(() => {
@@ -42,8 +49,8 @@ export default function ServicesPage() {
             ]);
             setServices(servicesData || []);
             setStores(storesData || []);
-            if (storesData.length > 0 && !formData.storeId) {
-                setFormData(prev => ({ ...prev, storeId: storesData[0].id }));
+            if (storesData.length > 0 && formData.storeIds.length === 0) {
+                setFormData(prev => ({ ...prev, storeIds: [storesData[0].id] }));
             }
         } catch (err) {
             console.error("Erro ao carregar dados:", err);
@@ -56,25 +63,53 @@ export default function ServicesPage() {
         e.preventDefault();
         setLoading(true);
 
+        if (formData.storeIds.length === 0) {
+            alert("Selecione pelo menos uma barbearia.");
+            setLoading(false);
+            return;
+        }
+
         try {
-            const payload = {
+            const basePayload = {
                 name: formData.name,
                 description: formData.description,
                 price: parseFloat(formData.price),
                 durationMinutes: parseInt(formData.duration),
                 category: formData.category,
-                storeId: formData.storeId,
             };
 
-            const result = editingService
-                ? await updateService(editingService.id, payload)
-                : await createService(payload);
+            let success = true;
+            let lastError = "";
 
-            if (result.success) {
+            if (editingService) {
+                // Update single service (the storeId is immutable in update for now)
+                const result = await updateService(editingService.id, {
+                    ...basePayload,
+                    storeId: formData.storeIds[0] 
+                });
+                if (!result.success) {
+                    success = false;
+                    lastError = result.error || "Erro ao atualizar.";
+                }
+            } else {
+                // Bulk create for each selected store
+                for (const storeId of formData.storeIds) {
+                    const result = await createService({
+                        ...basePayload,
+                        storeId
+                    });
+                    if (!result.success) {
+                        success = false;
+                        lastError = result.error || "Erro ao criar em uma das lojas.";
+                    }
+                }
+            }
+
+            if (success) {
                 await loadData();
                 closeModal();
             } else {
-                alert(result.error || "Tente novamente.");
+                alert(lastError || "Tente novamente.");
             }
         } catch (err) {
             console.error("Erro na operação:", err);
@@ -101,7 +136,7 @@ export default function ServicesPage() {
             price: service.price.toString(),
             duration: service.durationMinutes.toString(),
             category: service.category || "HAIR",
-            storeId: service.storeId,
+            storeIds: [service.storeId],
         });
         setIsModalOpen(true);
         setOpenMenuId(null);
@@ -116,7 +151,16 @@ export default function ServicesPage() {
             price: "0", 
             duration: "30", 
             category: "HAIR",
-            storeId: stores[0]?.id || "",
+            storeIds: stores.length > 0 ? [stores[0].id] : [],
+        });
+    };
+
+    const toggleStore = (id: string) => {
+        setFormData(prev => {
+            const updated = prev.storeIds.includes(id)
+                ? prev.storeIds.filter(sid => sid !== id)
+                : [...prev.storeIds, id];
+            return { ...prev, storeIds: updated };
         });
     };
 
@@ -127,14 +171,14 @@ export default function ServicesPage() {
     return (
         <AdminShell>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between font-display">
                     <div>
-                        <h1 className="font-display text-2xl font-bold uppercase italic tracking-tight text-white">Catálogo de Serviços</h1>
+                        <h1 className="text-2xl font-black uppercase italic tracking-tight text-white">Catálogo de Serviços</h1>
                         <p className="text-zinc-500 text-sm mt-1 font-medium italic">Gerencie o cardápio de serviços de todas as suas barbearias</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-brand shadow-orange-600/20"
+                        className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-brand shadow-orange-600/20 italic"
                     >
                         <Plus className="w-4 h-4" />
                         Novo Serviço
@@ -241,19 +285,44 @@ export default function ServicesPage() {
             >
                 <form onSubmit={handleAction} className="space-y-6 py-4">
                     <div className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Unidade / Alocação</label>
-                            <select 
-                                required
-                                value={formData.storeId}
-                                onChange={(e) => setFormData({...formData, storeId: e.target.value})}
-                                className="w-full bg-dark-700 border border-white/5 rounded-2xl px-5 h-16 text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 font-black italic uppercase tracking-widest text-xs"
-                            >
-                                <option value="" disabled>Escolha a barbearia</option>
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">
+                                {editingService ? "Unidade Alocada" : "Unidades / Alocação (Selecione uma ou mais)"}
+                            </label>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {stores.map(st => (
-                                    <option key={st.id} value={st.id}>{st.name}</option>
+                                    <button
+                                        key={st.id}
+                                        type="button"
+                                        disabled={!!editingService}
+                                        onClick={() => toggleStore(st.id)}
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all text-left ${
+                                            formData.storeIds.includes(st.id) 
+                                                ? "bg-brand-500/10 border-brand-500/40 text-white" 
+                                                : "bg-dark-700 border-white/5 text-zinc-500 hover:border-white/10"
+                                        } ${editingService ? "opacity-70 cursor-not-allowed" : ""}`}
+                                    >
+                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                            formData.storeIds.includes(st.id)
+                                                ? "bg-brand-500 border-brand-500 text-white"
+                                                : "border-white/10"
+                                        }`}>
+                                            {formData.storeIds.includes(st.id) && <CheckCircle className="w-3.5 h-3.5" />}
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest truncate">{st.name}</span>
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
+                            {!editingService && stores.length > 1 && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => setFormData(prev => ({ ...prev, storeIds: stores.map(s => s.id) }))}
+                                    className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-400 hover:text-brand-300 transition-colors ml-1"
+                                >
+                                    + Selecionar todas as unidades
+                                </button>
+                            )}
                         </div>
 
                         <div className="space-y-2">

@@ -1,19 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
 import {
     Scissors, LayoutDashboard, Users, UserCog, Wrench, Package,
     Calendar, BarChart3, DollarSign, TrendingDown, CreditCard,
-    Trophy, Percent, Image, Megaphone, Star, Bot, Settings,
+    Trophy, Percent, Image, Stars, Star, Bot, Settings,
     LogOut, ChevronLeft, ChevronRight, Store, BadgePercent, Gift, PiggyBank, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatbarberLogo } from "@/components/logo";
+import { getSubscriptionStatus } from "@/app/actions/stripe-actions";
+import { getPlanByPriceId, PlanFeature } from "@/config/plans";
 
-const navGroups = [
+interface NavItem {
+    href: string;
+    icon: any;
+    label: string;
+    requiredFeature?: PlanFeature;
+}
+
+interface NavGroup {
+    label: string;
+    items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
     {
         label: "Principal",
         items: [
@@ -44,14 +58,14 @@ const navGroups = [
     {
         label: "Relatórios",
         items: [
-            { href: "/admin/reports", icon: BarChart3, label: "Relatórios" },
+            { href: "/admin/reports", icon: BarChart3, label: "Relatórios", requiredFeature: "ADVANCED_REPORTS" },
         ],
     },
     {
         label: "Marketing",
         items: [
-            { href: "/admin/campaigns", icon: Trophy, label: "Campanhas" },
-            { href: "/admin/marketing/indica-ai", icon: Gift, label: "IndicaAí" },
+            { href: "/admin/campaigns", icon: Trophy, label: "Campanhas", requiredFeature: "GAMIFICATION" },
+            { href: "/admin/marketing/indica-ai", icon: Gift, label: "IndicaAí", requiredFeature: "INDICA_AI" },
             { href: "/admin/banners", icon: Image, label: "Banners" },
         ],
     },
@@ -60,7 +74,7 @@ const navGroups = [
         items: [
             { href: "/admin/stores", icon: Store, label: "Lojas" },
             { href: "/admin/settings", icon: Settings, label: "Configurações" },
-            { href: "/admin/ai", icon: Bot, label: "IA & API" },
+            { href: "/admin/ai", icon: Bot, label: "IA & API", requiredFeature: "AI_WHATSAPP" },
         ],
     },
 ];
@@ -68,6 +82,26 @@ const navGroups = [
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
+    const [userFeatures, setUserFeatures] = useState<PlanFeature[] | "all">([]);
+
+    useEffect(() => {
+        async function loadPlan() {
+            const status = await getSubscriptionStatus();
+            if (status.isDev) {
+                setUserFeatures("all");
+            } else if (status.priceId) {
+                const plan = getPlanByPriceId(status.priceId);
+                setUserFeatures(plan?.features || []);
+            }
+        }
+        loadPlan();
+    }, []);
+
+    const hasAccess = (feature?: PlanFeature) => {
+        if (!feature) return true;
+        if (userFeatures === "all") return true;
+        return userFeatures.includes(feature);
+    };
 
     return (
         <aside
@@ -112,7 +146,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                             </p>
                         )}
                         <div className="space-y-0.5">
-                            {group.items.map((item) => {
+                            {group.items.filter(item => hasAccess(item.requiredFeature)).map((item) => {
                                 const active = pathname === item.href || pathname.startsWith(item.href + "/");
                                 return (
                                     <Link

@@ -70,20 +70,29 @@ export async function getSubscriptionStatus() {
         if (!session?.user) return { active: false };
 
         // Bypass for developer account
-        if (session.user.email === "admin@gmail.com") {
-            return { active: true, isDev: true };
+        if ((session.user as any).isDev) {
+            return { 
+                active: true, 
+                isDev: true,
+                priceId: "price_1TISxDF9fVZA3i56U6ZPO5aW" // Default to Pro/Enterprise feature set for dev
+            };
         }
 
         const userId = (session.user as any).id;
         const owner = await prisma.owner.findUnique({
             where: { id: userId },
-            select: { stripeCurrentPeriodEnd: true, stripeSubscriptionId: true }
+            select: { stripeCurrentPeriodEnd: true, stripeSubscriptionId: true, stripePriceId: true }
         });
 
         if (!owner?.stripeSubscriptionId) return { active: false };
 
         const isActive = owner.stripeCurrentPeriodEnd && owner.stripeCurrentPeriodEnd > new Date();
-        return { active: !!isActive, expiry: owner.stripeCurrentPeriodEnd };
+        return { 
+            active: !!isActive, 
+            expiry: owner.stripeCurrentPeriodEnd,
+            priceId: owner.stripePriceId,
+            isDev: false
+        };
     } catch (e) {
         return { active: false };
     }

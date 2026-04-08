@@ -39,7 +39,7 @@ export function SubscriptionBarrier() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             {/* Darker backdrop to fully block content */}
             <div className="absolute inset-0 bg-dark-950/95 backdrop-blur-xl animate-fade-in" />
-            
+
             <div className="relative w-full max-w-lg bg-dark-800 border border-brand-500/30 rounded-[40px] shadow-2xl p-10 text-center animate-scale-in">
                 <div className="w-20 h-20 bg-brand-gradient rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-brand-lg">
                     <Rocket className="w-10 h-10 text-white" />
@@ -67,7 +67,7 @@ export function SubscriptionBarrier() {
                             </>
                         )}
                     </button>
-                    
+
                     <p className="text-xs text-zinc-500">
                         Nenhuma cobrança será feita nos primeiros 14 dias. Você pode cancelar a qualquer momento.
                     </p>

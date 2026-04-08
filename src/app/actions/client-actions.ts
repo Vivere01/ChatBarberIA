@@ -36,6 +36,18 @@ export async function createClient(data: {
     try {
         const ownerId = await getEffectiveOwnerId();
 
+        // Check plan limits
+        const { getSubscriptionInfo } = await import("@/lib/permissions");
+        const info = await getSubscriptionInfo();
+        
+        if (info && !info.isDev) {
+            const currentClients = await prisma.client.count({ where: { ownerId } });
+            const limit = info.plan?.limits.clients ?? 200;
+            if (limit !== -1 && currentClients >= limit) {
+                return { success: false, error: `Seu plano ${info.plan?.name || "Starter"} permite no máximo ${limit} clientes.` };
+            }
+        }
+
         let passwordHash = undefined;
         if (data.password) {
             passwordHash = await bcrypt.hash(data.password, 10);

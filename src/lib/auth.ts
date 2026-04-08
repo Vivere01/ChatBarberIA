@@ -143,6 +143,7 @@ export const authOptions: NextAuthOptions = {
                 token.role = (user as any).role;
                 token.storeId = (user as any).storeId;
                 token.ownerId = (user as any).ownerId;
+                token.isDev = (user as any).isDev; // Add isDev
             }
             return token;
         },
@@ -152,6 +153,7 @@ export const authOptions: NextAuthOptions = {
                 (session.user as any).role = token.role;
                 (session.user as any).storeId = token.storeId;
                 (session.user as any).ownerId = token.ownerId;
+                (session.user as any).isDev = token.isDev; // Add isDev
             }
             return session;
         },

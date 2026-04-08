@@ -1,6 +1,3 @@
-// ChatBarber — Prisma Schema
-// Scalable multi-tenant architecture for 100k+ barber shop owners
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
@@ -11,9 +8,547 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────────────────
-// ENUMS
-// ─────────────────────────────────────────────────────────────
+model Owner {
+  id                     String             @id @default(cuid())
+  name                   String
+  email                  String             @unique
+  passwordHash           String
+  phone                  String?
+  avatarUrl              String?
+  role                   UserRole           @default(OWNER)
+  isActive               Boolean            @default(true)
+  apiKey                 String             @unique @default(cuid())
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  celcashPublicToken     String?
+  celcashToken           String?
+  stripeCurrentPeriodEnd DateTime?
+  stripeCustomerId       String?            @unique
+  stripePriceId          String?
+  stripeSubscriptionId   String?            @unique
+  aiContext              AiContext?
+  banners                Banner[]
+  campaigns              Campaign[]
+  referralCampaigns      ReferralCampaign[]
+  stores                 Store[]
+  subscriptionPlans      SubscriptionPlan[]
+
+  @@map("owners")
+}
+
+model Store {
+  id                 String            @id @default(cuid())
+  ownerId            String
+  name               String
+  slug               String            @unique
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  zipCode            String?
+  logoUrl            String?
+  primaryColor       String            @default("#f97316")
+  description        String?
+  isActive           Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  brandingFaviconUrl String?
+  colorDefaulter     String            @default("#991B1B")
+  colorRegular       String            @default("#475569")
+  colorSubscriber    String            @default("#166534")
+  loginBackgroundUrl String?
+  appointments       Appointment[]
+  banners            Banner[]
+  businessHours      BusinessHour[]
+  cashEntries        CashEntry[]
+  clientStores       ClientStore[]
+  costs              Cost[]
+  npsRatings         NpsRating[]
+  potDistributions   PotDistribution[]
+  products           Product[]
+  services           Service[]
+  staff              Staff[]
+  owner              Owner             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  waitlistEntries    WaitlistEntry[]
+
+  @@index([ownerId])
+  @@map("stores")
+}
+
+model BusinessHour {
+  id         String   @id @default(cuid())
+  storeId    String
+  dayOfWeek  Int
+  isOpen     Boolean  @default(true)
+  openTime   String
+  closeTime  String
+  breakStart String?
+  breakEnd   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, dayOfWeek])
+  @@map("business_hours")
+}
+
+model Staff {
+  id                       String                  @id @default(cuid())
+  storeId                  String
+  name                     String
+  email                    String?
+  phone                    String?
+  passwordHash             String?
+  avatarUrl                String?
+  role                     UserRole                @default(STAFF)
+  commissionPercent        Float                   @default(0)
+  gamificationLevel        GamificationLevel       @default(BRONZE)
+  gamificationPoints       Int                     @default(0)
+  isActive                 Boolean                 @default(true)
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  appointments             Appointment[]
+  campaignEntries          CampaignEntry[]
+  commissions              Commission[]
+  npsRatings               NpsRating[]
+  referralCampaignLinks    ReferralLink[]
+  store                    Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staffServices            StaffService[]
+  allowedSubscriptionPlans SubscriptionPlanStaff[]
+
+  @@index([storeId])
+  @@map("staff")
+}
+
+model Client {
+  id                String              @id @default(cuid())
+  ownerId           String
+  name              String
+  email             String?
+  passwordHash      String?
+  phone             String?
+  cpf               String?
+  avatarUrl         String?
+  birthDate         DateTime?
+  clientType        ClientType          @default(WALK_IN)
+  totalSpent        Float               @default(0)
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  isDefaulter       Boolean             @default(false)
+  appointments      Appointment[]
+  clientStores      ClientStore[]
+  subscription      ClientSubscription?
+  npsRatings        NpsRating[]
+  referralConverted ReferralConversion? @relation("ConvertedClient")
+  referralLinks     ReferralLink[]      @relation("ClientPromoter")
+  waitlistEntries   WaitlistEntry[]
+
+  @@unique([ownerId, email])
+  @@unique([ownerId, cpf])
+  @@index([ownerId])
+  @@map("clients")
+}
+
+model ClientStore {
+  id         String   @id @default(cuid())
+  clientId   String
+  storeId    String
+  firstVisit DateTime @default(now())
+  lastVisit  DateTime @default(now())
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, storeId])
+  @@map("client_stores")
+}
+
+model WaitlistEntry {
+  id            String         @id @default(cuid())
+  storeId       String
+  clientId      String
+  requestedDate DateTime
+  notes         String?
+  status        WaitlistStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@map("waitlist_entries")
+}
+
+model Service {
+  id                       String                    @id @default(cuid())
+  storeId                  String
+  name                     String
+  description              String?
+  price                    Float
+  durationMinutes          Int                       @default(30)
+  category                 String?
+  isActive                 Boolean                   @default(true)
+  imageUrl                 String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  appointmentItems         AppointmentItem[]
+  store                    Store                     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staffServices            StaffService[]
+  subscriptionPlanServices SubscriptionPlanService[]
+
+  @@index([storeId])
+  @@map("services")
+}
+
+model StaffService {
+  staffId   String
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+  @@map("staff_services")
+}
+
+model Product {
+  id               String            @id @default(cuid())
+  storeId          String
+  name             String
+  description      String?
+  sku              String?
+  priceRetail      Float
+  priceCost        Float?
+  stockQty         Int               @default(0)
+  imageUrl         String?
+  category         String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  appointmentItems AppointmentItem[]
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("products")
+}
+
+model Appointment {
+  id              String            @id @default(cuid())
+  storeId         String
+  clientId        String
+  staffId         String
+  status          AppointmentStatus @default(SCHEDULED)
+  scheduledAt     DateTime
+  durationMinutes Int               @default(30)
+  totalAmount     Float             @default(0)
+  paymentMethod   PaymentMethod?
+  notes           String?
+  cancelledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  fichasCount     Int               @default(0)
+  isSubscription  Boolean           @default(false)
+  items           AppointmentItem[]
+  client          Client            @relation(fields: [clientId], references: [id])
+  staff           Staff             @relation(fields: [staffId], references: [id])
+  store           Store             @relation(fields: [storeId], references: [id])
+  commission      Commission?
+  npsRating       NpsRating?
+
+  @@index([storeId, scheduledAt])
+  @@index([clientId])
+  @@index([staffId])
+  @@map("appointments")
+}
+
+model AppointmentItem {
+  id            String      @id @default(cuid())
+  appointmentId String
+  serviceId     String?
+  productId     String?
+  quantity      Int         @default(1)
+  unitPrice     Float
+  totalPrice    Float
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  product       Product?    @relation(fields: [productId], references: [id])
+  service       Service?    @relation(fields: [serviceId], references: [id])
+
+  @@map("appointment_items")
+}
+
+model SubscriptionPlan {
+  id                          String                    @id @default(cuid())
+  ownerId                     String
+  name                        String
+  description                 String?
+  price                       Float
+  billingCycleDay             Int                       @default(1)
+  intervalDays                Int                       @default(30)
+  isActive                    Boolean                   @default(true)
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+  chipsPerService             Int                       @default(1)
+  potAmount                   Float                     @default(0)
+  activeDays                  Int[]                     @default([1, 2, 3, 4, 5, 6])
+  galaxId                     String?
+  maxSimultaneousAppointments Int                       @default(1)
+  periodicity                 SubscriptionPeriodicity   @default(MONTHLY)
+  productDiscountPercent      Float                     @default(0)
+  checkoutUrl                 String?
+  clientSubscriptions         ClientSubscription[]
+  services                    SubscriptionPlanService[]
+  allowedStaff                SubscriptionPlanStaff[]
+  owner                       Owner                     @relation(fields: [ownerId], references: [id])
+
+  @@map("subscription_plans")
+}
+
+model SubscriptionPlanStaff {
+  planId  String
+  staffId String
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  staff   Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([planId, staffId])
+  @@map("subscription_plan_staff")
+}
+
+model SubscriptionPlanService {
+  planId     String
+  serviceId  String
+  usageLimit Int?
+  plan       SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  service    Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([planId, serviceId])
+  @@map("subscription_plan_services")
+}
+
+model ClientSubscription {
+  id          String             @id @default(cuid())
+  clientId    String             @unique
+  planId      String
+  status      SubscriptionStatus @default(ACTIVE)
+  startDate   DateTime           @default(now())
+  endDate     DateTime?
+  renewedAt   DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  client      Client             @relation(fields: [clientId], references: [id])
+  plan        SubscriptionPlan   @relation(fields: [planId], references: [id])
+
+  @@map("client_subscriptions")
+}
+
+model Cost {
+  id             String   @id @default(cuid())
+  storeId        String
+  name           String
+  type           CostType
+  amount         Float
+  dueDay         Int?
+  referenceMonth String?
+  notes          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("costs")
+}
+
+model CashEntry {
+  id            String        @id @default(cuid())
+  storeId       String
+  type          CashEntryType
+  amount        Float
+  description   String
+  paymentMethod PaymentMethod @default(CASH)
+  entryDate     DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, entryDate])
+  @@map("cash_entries")
+}
+
+model Commission {
+  id               String           @id @default(cuid())
+  staffId          String
+  appointmentId    String           @unique
+  grossAmount      Float
+  commissionRate   Float
+  commissionAmount Float
+  status           CommissionStatus @default(PENDING)
+  paidAt           DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  appointment      Appointment      @relation(fields: [appointmentId], references: [id])
+  staff            Staff            @relation(fields: [staffId], references: [id])
+
+  @@index([staffId])
+  @@map("commissions")
+}
+
+model Campaign {
+  id           String          @id @default(cuid())
+  ownerId      String
+  name         String
+  description  String?
+  status       CampaignStatus  @default(DRAFT)
+  startDate    DateTime
+  endDate      DateTime
+  targetAmount Float?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  entries      CampaignEntry[]
+  owner        Owner           @relation(fields: [ownerId], references: [id])
+
+  @@map("campaigns")
+}
+
+model CampaignEntry {
+  id            String   @id @default(cuid())
+  campaignId    String
+  staffId       String
+  appointmentId String?
+  saleAmount    Float
+  points        Int      @default(0)
+  createdAt     DateTime @default(now())
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  staff         Staff    @relation(fields: [staffId], references: [id])
+
+  @@index([campaignId, staffId])
+  @@map("campaign_entries")
+}
+
+model Banner {
+  id        String     @id @default(cuid())
+  ownerId   String
+  storeId   String?
+  title     String
+  imageUrl  String
+  linkUrl   String?
+  type      BannerType @default(INTERNAL)
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  owner     Owner      @relation(fields: [ownerId], references: [id])
+  store     Store?     @relation(fields: [storeId], references: [id])
+
+  @@map("banners")
+}
+
+model NpsRating {
+  id            String      @id @default(cuid())
+  appointmentId String      @unique
+  storeId       String
+  staffId       String
+  clientId      String
+  score         Int
+  comment       String?
+  createdAt     DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  client        Client      @relation(fields: [clientId], references: [id])
+  staff         Staff       @relation(fields: [staffId], references: [id])
+  store         Store       @relation(fields: [storeId], references: [id])
+
+  @@index([staffId])
+  @@index([storeId])
+  @@map("nps_ratings")
+}
+
+model PotDistribution {
+  id             String   @id @default(cuid())
+  storeId        String
+  month          Int
+  year           Int
+  totalPotAmount Float
+  totalFichas    Int
+  valuePerFicha  Float
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+  store          Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, month, year])
+  @@map("pot_distributions")
+}
+
+model ReferralCampaign {
+  id                      String         @id @default(cuid())
+  ownerId                 String
+  name                    String
+  description             String?
+  status                  CampaignStatus @default(DRAFT)
+  startDate               DateTime
+  endDate                 DateTime?
+  promoterCommissionType  String         @default("PERCENT")
+  promoterCommissionValue Float          @default(0)
+  newClientDiscountType   String         @default("PERCENT")
+  newClientDiscountValue  Float          @default(0)
+  staffCommissionType     String         @default("PERCENT")
+  staffCommissionValue    Float          @default(0)
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  owner                   Owner          @relation(fields: [ownerId], references: [id])
+  links                   ReferralLink[]
+
+  @@map("referral_campaigns")
+}
+
+model ReferralLink {
+  id               String               @id @default(cuid())
+  campaignId       String
+  promoterClientId String
+  staffId          String
+  code             String               @unique @default(cuid())
+  status           CampaignStatus       @default(ACTIVE)
+  createdAt        DateTime             @default(now())
+  conversions      ReferralConversion[]
+  campaign         ReferralCampaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  promoterClient   Client               @relation("ClientPromoter", fields: [promoterClientId], references: [id])
+  staff            Staff                @relation(fields: [staffId], references: [id])
+
+  @@index([campaignId])
+  @@map("referral_links")
+}
+
+model ReferralConversion {
+  id           String         @id @default(cuid())
+  linkId       String
+  newClientId  String         @unique
+  status       ReferralStatus @default(PENDING)
+  convertedAt  DateTime?
+  promoterPaid Boolean        @default(false)
+  staffPaid    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  link         ReferralLink   @relation(fields: [linkId], references: [id])
+  newClient    Client         @relation("ConvertedClient", fields: [newClientId], references: [id])
+
+  @@map("referral_conversions")
+}
+
+model AiContext {
+  id              String    @id @default(cuid())
+  ownerId         String    @unique
+  systemPrompt    String?
+  trainingData    Json?
+  lastSyncedAt    DateTime?
+  whatsappToken   String?
+  evolutionApiUrl String?
+  openaiKey       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  owner           Owner     @relation(fields: [ownerId], references: [id])
+
+  @@map("ai_contexts")
+}
 
 enum UserRole {
   SUPER_ADMIN
@@ -105,651 +640,8 @@ enum SubscriptionPeriodicity {
   YEARLY
 }
 
-// ─────────────────────────────────────────────────────────────
-// OWNERS (Donos de sistema SaaS)
-// ─────────────────────────────────────────────────────────────
-
-model Owner {
-  id                String    @id @default(cuid())
-  name              String
-  email             String    @unique
-  passwordHash      String
-  phone             String?
-  avatarUrl         String?
-  role              UserRole  @default(OWNER)
-  isActive          Boolean   @default(true)
-  apiKey            String    @unique @default(cuid())
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  stores            Store[]
-  subscriptionPlans SubscriptionPlan[]
-  banners           Banner[]
-  campaigns         Campaign[]
-  referralCampaigns ReferralCampaign[]
-  celcashToken      String?
-  celcashPublicToken String?
-  aiContext         AiContext?
-  
-  // Stripe Subscription
-  stripeCustomerId       String?   @unique
-  stripeSubscriptionId   String?   @unique
-  stripePriceId          String?
-  stripeCurrentPeriodEnd DateTime?
-
-
-  @@map("owners")
-}
-
-// ─────────────────────────────────────────────────────────────
-// STORES (Lojas/Unidades)
-// ─────────────────────────────────────────────────────────────
-
-model Store {
-  id              String    @id @default(cuid())
-  ownerId         String
-  name            String
-  slug            String    @unique  // chatbarber.com.br/[slug]
-  email           String?
-  phone           String?
-  address         String?
-  city            String?
-  state           String?
-  zipCode         String?
-  logoUrl         String?
-  primaryColor    String    @default("#f97316")
-  colorSubscriber String    @default("#166534")
-  colorRegular    String    @default("#475569")
-  colorDefaulter  String    @default("#991B1B")
-  loginBackgroundUrl String?   
-  brandingFaviconUrl String?
-  description     String?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
-  owner           Owner           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  businessHours   BusinessHour[]
-  staff           Staff[]
-  services        Service[]
-  products        Product[]
-  appointments    Appointment[]
-  costs           Cost[]
-  cashEntries     CashEntry[]
-  clientStores    ClientStore[]
-  banners         Banner[]
-  npsRatings      NpsRating[]
-  waitlistEntries WaitlistEntry[]
-  potDistributions PotDistribution[]
-
-  @@index([ownerId])
-  @@map("stores")
-}
-
-// ─────────────────────────────────────────────────────────────
-// BUSINESS HOURS
-// ─────────────────────────────────────────────────────────────
-
-model BusinessHour {
-  id          String    @id @default(cuid())
-  storeId     String
-  dayOfWeek   Int       // 0=Sunday, 1=Monday, ..., 6=Saturday
-  isOpen      Boolean   @default(true)
-  openTime    String    // "08:00"
-  closeTime   String    // "20:00"
-  breakStart  String?   // "12:00"
-  breakEnd    String?   // "13:00"
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  @@unique([storeId, dayOfWeek])
-  @@map("business_hours")
-}
-
-// ─────────────────────────────────────────────────────────────
-// STAFF (Barbeiros/Profissionais)
-// ─────────────────────────────────────────────────────────────
-
-model Staff {
-  id                  String            @id @default(cuid())
-  storeId             String
-  name                String
-  email               String?
-  phone               String?
-  passwordHash        String?
-  avatarUrl           String?
-  role                UserRole          @default(STAFF)
-  commissionPercent   Float             @default(0)   // % de comissão
-  gamificationLevel   GamificationLevel @default(BRONZE)
-  gamificationPoints  Int               @default(0)
-  isActive            Boolean           @default(true)
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-
-  // Relations
-  store               Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  staffServices       StaffService[]
-  appointments        Appointment[]
-  commissions         Commission[]
-  campaignEntries     CampaignEntry[]
-  npsRatings          NpsRating[]
-  referralCampaignLinks ReferralLink[]
-  allowedSubscriptionPlans SubscriptionPlanStaff[]
-
-  @@index([storeId])
-  @@map("staff")
-}
-
-// ─────────────────────────────────────────────────────────────
-// CLIENTS (Clientes dos donos de barbearia)
-// ─────────────────────────────────────────────────────────────
-
-model Client {
-  id            String      @id @default(cuid())
-  ownerId       String      // Dono do sistema ao qual este cliente pertence
-  name          String
-  email         String?
-  passwordHash  String?
-  phone         String?
-  cpf           String?
-  avatarUrl     String?
-  birthDate     DateTime?
-  clientType    ClientType  @default(WALK_IN)
-  totalSpent    Float       @default(0)
-  isActive      Boolean     @default(true)
-  isDefaulter   Boolean     @default(false) // Indica se o cliente está inadimplente (pagamento de assinatua atrasado/falho)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  // Relations
-  clientStores      ClientStore[]
-  appointments      Appointment[]
-  subscription      ClientSubscription?
-  waitlistEntries   WaitlistEntry[]
-  npsRatings        NpsRating[]
-  referralLinks     ReferralLink[]     @relation("ClientPromoter")
-  referralConverted ReferralConversion? @relation("ConvertedClient")
-
-  @@unique([ownerId, email])
-  @@unique([ownerId, cpf])
-  @@index([ownerId])
-  @@map("clients")
-}
-
-// Vínculo Cliente ↔ Loja (cliente pode visitar múltiplas lojas do mesmo owner)
-model ClientStore {
-  id        String    @id @default(cuid())
-  clientId  String
-  storeId   String
-  firstVisit DateTime @default(now())
-  lastVisit  DateTime @default(now())
-
-  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  @@unique([clientId, storeId])
-  @@map("client_stores")
-}
-
 enum WaitlistStatus {
   PENDING
   FULFILLED
   CANCELLED
-}
-
-model WaitlistEntry {
-  id              String      @id @default(cuid())
-  storeId         String
-  clientId        String
-  requestedDate   DateTime
-  notes           String?
-  status          WaitlistStatus @default(PENDING)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  client          Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  @@index([storeId, status])
-  @@map("waitlist_entries")
-}
-
-// ─────────────────────────────────────────────────────────────
-// SERVICES & PRODUCTS
-// ─────────────────────────────────────────────────────────────
-
-model Service {
-  id              String    @id @default(cuid())
-  storeId         String
-  name            String
-  description     String?
-  price           Float
-  durationMinutes Int       @default(30)
-  category        String?
-  isActive        Boolean   @default(true)
-  imageUrl        String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  store           Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  staffServices   StaffService[]
-  appointmentItems AppointmentItem[]
-  subscriptionPlanServices SubscriptionPlanService[]
-
-  @@index([storeId])
-  @@map("services")
-}
-
-model StaffService {
-  staffId     String
-  serviceId   String
-
-  staff       Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  service     Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
-  @@id([staffId, serviceId])
-  @@map("staff_services")
-}
-
-model Product {
-  id            String    @id @default(cuid())
-  storeId       String
-  name          String
-  description   String?
-  sku           String?
-  priceRetail   Float
-  priceCost     Float?
-  stockQty      Int       @default(0)
-  imageUrl      String?
-  category      String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  store         Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  appointmentItems AppointmentItem[]
-
-  @@index([storeId])
-  @@map("products")
-}
-
-// ─────────────────────────────────────────────────────────────
-// APPOINTMENTS (Agendamentos)
-// ─────────────────────────────────────────────────────────────
-
-model Appointment {
-  id              String            @id @default(cuid())
-  storeId         String
-  clientId        String
-  staffId         String
-  status          AppointmentStatus @default(SCHEDULED)
-  scheduledAt     DateTime
-  durationMinutes Int               @default(30)
-  totalAmount     Float             @default(0)
-  paymentMethod   PaymentMethod?
-  notes           String?
-  cancelledAt     DateTime?
-  completedAt     DateTime?
-  isSubscription  Boolean           @default(false)
-  fichasCount     Int               @default(0)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  store           Store               @relation(fields: [storeId], references: [id])
-  client          Client              @relation(fields: [clientId], references: [id])
-  staff           Staff               @relation(fields: [staffId], references: [id])
-  items           AppointmentItem[]
-  commission      Commission?
-  npsRating       NpsRating?
-
-  @@index([storeId, scheduledAt])
-  @@index([clientId])
-  @@index([staffId])
-  @@map("appointments")
-}
-
-model AppointmentItem {
-  id              String    @id @default(cuid())
-  appointmentId   String
-  serviceId       String?
-  productId       String?
-  quantity        Int       @default(1)
-  unitPrice       Float
-  totalPrice      Float
-
-  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  service         Service?    @relation(fields: [serviceId], references: [id])
-  product         Product?    @relation(fields: [productId], references: [id])
-
-  @@map("appointment_items")
-}
-
-// ─────────────────────────────────────────────────────────────
-// SUBSCRIPTIONS (Planos de Assinatura)
-// ─────────────────────────────────────────────────────────────
-
-model SubscriptionPlan {
-  id                        String    @id @default(cuid())
-  ownerId                   String
-  name                      String
-  description               String?
-  price                     Float
-  potAmount                 Float     @default(0)    // Valor da mensalidade que vai para o "pote"
-  chipsPerService           Int       @default(1)    // Quantidade de fichas por atendimento
-  billingCycleDay           Int       @default(1)
-  intervalDays              Int       @default(30)
-  periodicity               SubscriptionPeriodicity @default(MONTHLY)
-  productDiscountPercent    Float     @default(0)    // Desconto em produtos (%)
-  activeDays                Int[]     @default([1, 2, 3, 4, 5, 6]) // 0=Sunday, 1=Monday... (Default Mon-Sat)
-  maxSimultaneousAppointments Int     @default(1)    // Qtd agendamentos simultâneos/visíveis
-  galaxId                   String?   // ID no Celcash/GalaxPay
-  checkoutUrl               String?   // Link de pagamento direto (Celcoin/GalaxPay)
-  isActive                  Boolean   @default(true)
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-
-  owner                    Owner                     @relation(fields: [ownerId], references: [id])
-  services                 SubscriptionPlanService[]
-  clientSubscriptions      ClientSubscription[]
-  allowedStaff             SubscriptionPlanStaff[]
-
-  @@map("subscription_plans")
-}
-
-model SubscriptionPlanStaff {
-  planId  String
-  staffId String
-
-  plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  staff   Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
-
-  @@id([planId, staffId])
-  @@map("subscription_plan_staff")
-}
-
-model SubscriptionPlanService {
-  planId      String
-  serviceId   String
-  usageLimit  Int?  // null = ilimitado
-
-  plan        SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  service     Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
-  @@id([planId, serviceId])
-  @@map("subscription_plan_services")
-}
-
-model ClientSubscription {
-  id          String             @id @default(cuid())
-  clientId    String             @unique
-  planId      String
-  status      SubscriptionStatus @default(ACTIVE)
-  startDate   DateTime           @default(now())
-  endDate     DateTime?
-  renewedAt   DateTime?
-  cancelledAt DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-
-  client      Client           @relation(fields: [clientId], references: [id])
-  plan        SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  @@map("client_subscriptions")
-}
-
-// ─────────────────────────────────────────────────────────────
-// FINANCIAL — Costs & Cash
-// ─────────────────────────────────────────────────────────────
-
-model Cost {
-  id          String    @id @default(cuid())
-  storeId     String
-  name        String
-  type        CostType
-  amount      Float
-  dueDay      Int?      // dia do mês (para fixos)
-  referenceMonth String? // "2026-03" (para variáveis)
-  notes       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  @@index([storeId])
-  @@map("costs")
-}
-
-model CashEntry {
-  id            String        @id @default(cuid())
-  storeId       String
-  type          CashEntryType
-  amount        Float
-  description   String
-  paymentMethod PaymentMethod @default(CASH)
-  entryDate     DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-
-  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  @@index([storeId, entryDate])
-  @@map("cash_entries")
-}
-
-// ─────────────────────────────────────────────────────────────
-// COMMISSIONS
-// ─────────────────────────────────────────────────────────────
-
-model Commission {
-  id              String           @id @default(cuid())
-  staffId         String
-  appointmentId   String           @unique
-  grossAmount     Float
-  commissionRate  Float            // % aplicada
-  commissionAmount Float
-  status          CommissionStatus @default(PENDING)
-  paidAt          DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  staff           Staff       @relation(fields: [staffId], references: [id])
-  appointment     Appointment @relation(fields: [appointmentId], references: [id])
-
-  @@index([staffId])
-  @@map("commissions")
-}
-
-// ─────────────────────────────────────────────────────────────
-// CAMPAIGNS & GAMIFICATION
-// ─────────────────────────────────────────────────────────────
-
-model Campaign {
-  id          String         @id @default(cuid())
-  ownerId     String
-  name        String
-  description String?
-  status      CampaignStatus @default(DRAFT)
-  startDate   DateTime
-  endDate     DateTime
-  targetAmount Float?        // meta em R$
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  owner       Owner             @relation(fields: [ownerId], references: [id])
-  entries     CampaignEntry[]
-
-  @@map("campaigns")
-}
-
-model CampaignEntry {
-  id            String    @id @default(cuid())
-  campaignId    String
-  staffId       String
-  appointmentId String?
-  saleAmount    Float
-  points        Int       @default(0)
-  createdAt     DateTime  @default(now())
-
-  campaign      Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  staff         Staff     @relation(fields: [staffId], references: [id])
-
-  @@index([campaignId, staffId])
-  @@map("campaign_entries")
-}
-
-// ─────────────────────────────────────────────────────────────
-// BANNERS
-// ─────────────────────────────────────────────────────────────
-
-model Banner {
-  id          String     @id @default(cuid())
-  ownerId     String
-  storeId     String?
-  title       String
-  imageUrl    String
-  linkUrl     String?
-  type        BannerType @default(INTERNAL)
-  isActive    Boolean    @default(true)
-  sortOrder   Int        @default(0)
-  startsAt    DateTime?
-  endsAt      DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  owner       Owner   @relation(fields: [ownerId], references: [id])
-  store       Store?  @relation(fields: [storeId], references: [id])
-
-  @@map("banners")
-}
-
-// ─────────────────────────────────────────────────────────────
-// NPS — Net Promoter Score
-// ─────────────────────────────────────────────────────────────
-
-model NpsRating {
-  id              String    @id @default(cuid())
-  appointmentId   String    @unique
-  storeId         String
-  staffId         String
-  clientId        String
-  score           Int       // 1–10
-  comment         String?
-  createdAt       DateTime  @default(now())
-
-  appointment     Appointment @relation(fields: [appointmentId], references: [id])
-  store           Store       @relation(fields: [storeId], references: [id])
-  staff           Staff       @relation(fields: [staffId], references: [id])
-  client          Client      @relation(fields: [clientId], references: [id])
-
-  @@index([staffId])
-  @@index([storeId])
-  @@map("nps_ratings")
-}
-
-// ─────────────────────────────────────────────────────────────
-// POT DISTRIBUTIONS (Sistema de Pote)
-// ─────────────────────────────────────────────────────────────
-
-model PotDistribution {
-  id              String    @id @default(cuid())
-  storeId         String
-  month           Int       // 1-12
-  year            Int
-  totalPotAmount  Float     // Valor total no pote (soma do potAmount das assinaturas ativas)
-  totalFichas     Int       // Soma de todas as fichas geradas no mês
-  valuePerFicha   Float     // totalPotAmount / totalFichas
-  status          String    @default("PENDING") // PENDING, PAID
-  createdAt       DateTime  @default(now())
-
-  store           Store     @relation(fields: [storeId], references: [id])
-
-  @@unique([storeId, month, year])
-  @@map("pot_distributions")
-}
-
-// ─────────────────────────────────────────────────────────────
-// INDICA AÍ — Referral Campaigns
-// ─────────────────────────────────────────────────────────────
-
-model ReferralCampaign {
-  id                    String         @id @default(cuid())
-  ownerId               String
-  name                  String
-  description           String?
-  status                CampaignStatus @default(DRAFT)
-  startDate             DateTime
-  endDate               DateTime?
-  // Comissões
-  promoterCommissionType  String       @default("PERCENT") // PERCENT | FIXED
-  promoterCommissionValue Float        @default(0)
-  newClientDiscountType   String       @default("PERCENT")
-  newClientDiscountValue  Float        @default(0)
-  staffCommissionType     String       @default("PERCENT")
-  staffCommissionValue    Float        @default(0)
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-
-  owner                 Owner              @relation(fields: [ownerId], references: [id])
-  links                 ReferralLink[]
-
-  @@map("referral_campaigns")
-}
-
-model ReferralLink {
-  id              String          @id @default(cuid())
-  campaignId      String
-  promoterClientId String         // Cliente assinante que vai indicar
-  staffId         String          // Barbeiro responsável pelo promotor
-  code            String          @unique @default(cuid())
-  status          CampaignStatus  @default(ACTIVE)
-  createdAt       DateTime        @default(now())
-
-  campaign        ReferralCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  promoterClient  Client             @relation("ClientPromoter", fields: [promoterClientId], references: [id])
-  staff           Staff              @relation(fields: [staffId], references: [id])
-  conversions     ReferralConversion[]
-
-  @@index([campaignId])
-  @@map("referral_links")
-}
-
-model ReferralConversion {
-  id              String         @id @default(cuid())
-  linkId          String
-  newClientId     String         @unique
-  status          ReferralStatus @default(PENDING)
-  convertedAt     DateTime?
-  promoterPaid    Boolean        @default(false)
-  staffPaid       Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-
-  link            ReferralLink   @relation(fields: [linkId], references: [id])
-  newClient       Client         @relation("ConvertedClient", fields: [newClientId], references: [id])
-
-  @@map("referral_conversions")
-}
-
-// ─────────────────────────────────────────────────────────────
-// AI CONTEXT (para treinamento de IA)
-// ─────────────────────────────────────────────────────────────
-
-model AiContext {
-  id              String    @id @default(cuid())
-  ownerId         String    @unique
-  systemPrompt    String?   @db.Text
-  trainingData    Json?     // dados consumidos automaticamente
-  lastSyncedAt    DateTime?
-  whatsappToken   String?
-  evolutionApiUrl String?
-  openaiKey       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  owner           Owner     @relation(fields: [ownerId], references: [id])
-
-  @@map("ai_contexts")
 }

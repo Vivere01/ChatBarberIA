@@ -17,7 +17,19 @@ export async function createStore(data: {
 }) {
     try {
         const ownerId = await getEffectiveOwnerId();
-
+        
+        // Check plan limits
+        const { getSubscriptionInfo } = await import("@/lib/permissions");
+        const info = await getSubscriptionInfo();
+        
+        if (info && !info.isDev) {
+            const currentStores = await prisma.store.count({ where: { ownerId } });
+            const limit = info.plan?.limits.stores ?? 1;
+            if (limit !== -1 && currentStores >= limit) {
+                return { success: false, error: `Seu plano ${info.plan?.name || "Starter"} permite no máximo ${limit} loja(s).` };
+            }
+        }
+        
         const store = await prisma.store.create({
             data: {
                 ...data,

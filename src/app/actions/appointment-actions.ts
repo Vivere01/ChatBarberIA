@@ -409,19 +409,25 @@ async function handleAppointmentCompletion(appointmentId: string) {
         const totalAmount = appointment.totalAmount || 0;
         const commissionPercent = appointment.staff?.commissionPercent || 0;
 
-        // Se é cliente avulso, registra entrada no caixa
-        if (appointment.client?.clientType !== "SUBSCRIBER") {
-            console.log(`[handleAppointmentCompletion] Creating CashEntry for walk-in client`);
+        // Se NÃO for assinante (é WALK_IN ou indefinido), registra no caixa
+        const isSubscriber = appointment.client?.clientType === "SUBSCRIBER";
+        
+        if (!isSubscriber) {
+            console.log(`[handleAppointmentCompletion] Cliente ${appointment.client?.name} é AVULSO. Registrando no caixa.`);
+            const entryDate = startOfDay(new Date(appointment.scheduledAt));
+            
             await prisma.cashEntry.create({
                 data: {
                     storeId: appointment.storeId,
                     type: "INCOME",
-                    amount: totalAmount,
-                    description: `Agendamento finalizado - Cliente: ${appointment.client?.name || 'Sem nome'}`,
-                    paymentMethod: "CASH",
-                    entryDate: new Date(),
+                    category: "SERVICO",
+                    amount: appointment.totalAmount,
+                    description: `Serviço: ${appointment.client?.name || 'Cliente'} - Ag. #${appointment.id.slice(-4)}`,
+                    entryDate: entryDate,
                 }
             });
+        } else {
+            console.log(`[handleAppointmentCompletion] Cliente ${appointment.client?.name} é ASSINANTE. Não gera entrada imediata no caixa.`);
         }
 
         // Calcula e gera comissão (para assinantes e avulsos)

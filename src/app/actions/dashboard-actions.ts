@@ -64,8 +64,12 @@ export async function getDashboardData() {
         const appointmentRevenue = completedAppointments.reduce((s, a) => s + a.totalAmount, 0);
         const cashIn = cashIncomeMonth._sum.amount ?? 0;
         const cashOut = cashExpenseMonth._sum.amount ?? 0;
-        // Receita total = agendamentos concluídos + outras entradas de caixa manuais
-        const monthRevenue = cashIn; // cashEntry já inclui as entradas dos agendamentos concluídos
+        
+        // Receita total: Somamos o faturamento dos agendamentos concluídos 
+        // MAIS as entradas de caixa que NÃO vieram de agendamentos (entradas manuais)
+        // Mas por enquanto, para ser mais seguro, vamos somar o maior valor entre agendamentos ou entradas de caixa INCOME
+        const monthRevenue = Math.max(appointmentRevenue, cashIn);
+        
         const avgTicket = completedAppointments.length > 0 ? appointmentRevenue / completedAppointments.length : 0;
 
         const formattedTopStaff = topStaff.map((s) => ({

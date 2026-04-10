@@ -181,8 +181,8 @@ export default async function DashboardPage() {
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { label: "Novo Agendamento", href: "/admin/appointments/new", icon: Calendar, color: "brand" },
-                        { label: "Cadastrar Cliente", href: "/admin/clients/new", icon: Users, color: "blue" },
+                        { label: "Novo Agendamento", href: "/admin/appointments", icon: Calendar, color: "brand" },
+                        { label: "Cadastrar Cliente", href: "/admin/clients", icon: Users, color: "blue" },
                         { label: "Lançar Caixa", href: "/admin/cashier", icon: DollarSign, color: "green" },
                         { label: "Ver Comissões", href: "/admin/commissions", icon: Scissors, color: "purple" },
                     ].map((action) => (

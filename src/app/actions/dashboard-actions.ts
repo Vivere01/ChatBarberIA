@@ -19,7 +19,7 @@ export async function getDashboardData(dateRange?: { from: Date; to: Date }) {
         const stores = await prisma.store.findMany({ where: { ownerId }, select: { id: true } });
         const storeIds = stores.map(s => s.id);
 
-        const [completedAppointments, cashIncomeMonth, cashExpenseMonth, appointmentsThisMonth, clientsTotal, todayAppointments, topStaff, allWaitlist] = await Promise.all([
+        const [completedAppointments, cashIncomeMonth, cashExpenseMonth, appointmentsThisMonth, clientsTotal, todayAppointments, topStaff] = await Promise.all([
             // Agendamentos concluídos no período
             prisma.appointment.findMany({
                 where: { storeId: { in: storeIds }, status: "COMPLETED", scheduledAt: { gte: monthStart, lte: monthEnd } },

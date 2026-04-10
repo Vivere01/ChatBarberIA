@@ -289,7 +289,11 @@ export async function updateAppointmentStatus(id: string, status: string) {
         });
 
         if (isCompleting) {
-            await handleAppointmentCompletion(id);
+            try {
+                await handleAppointmentCompletion(id);
+            } catch (error) {
+                console.error("Side effects (cashier/commission) failed but continuing status update:", error);
+            }
         }
 
         revalidatePath("/admin/appointments");
@@ -299,7 +303,7 @@ export async function updateAppointmentStatus(id: string, status: string) {
         return { success: true };
     } catch (error) {
         console.error("Error updating appointment status:", error);
-        return { success: false };
+        return { success: false, error: (error as Error).message };
     }
 }
 
@@ -368,7 +372,11 @@ export async function updateAdminAppointment(id: string, data: {
         });
 
         if (data.status === "COMPLETED" && appointment?.status !== "COMPLETED") {
-            await handleAppointmentCompletion(id);
+            try {
+                await handleAppointmentCompletion(id);
+            } catch (error) {
+                console.error("Side effects (cashier/commission) failed but continuing status update:", error);
+            }
         }
 
         revalidatePath("/admin/appointments");
@@ -378,48 +386,65 @@ export async function updateAdminAppointment(id: string, data: {
         return { success: true };
     } catch (error) {
         console.error("Error updating admin appointment:", error);
-        return { success: false };
+        return { success: false, error: (error as Error).message };
     }
 }
 
 async function handleAppointmentCompletion(appointmentId: string) {
-    const appointment = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
-        include: { client: true, staff: true }
-    });
+    console.log(`[handleAppointmentCompletion] Starting for ID: ${appointmentId}`);
+    try {
+        const appointment = await prisma.appointment.findUnique({
+            where: { id: appointmentId },
+            include: { client: true, staff: true }
+        });
 
-    if (!appointment) return;
+        if (!appointment) {
+            console.warn(`[handleAppointmentCompletion] Appointment ${appointmentId} not found`);
+            return;
+        }
 
-    // Se é cliente avulso, registra entrada no caixa
-    if (appointment.client.clientType !== "SUBSCRIBER") {
-        await prisma.cashEntry.create({
-            data: {
-                storeId: appointment.storeId,
-                type: "INCOME",
-                amount: appointment.totalAmount,
-                description: `Agendamento finalizado - Cliente: ${appointment.client.name || 'Sem nome'}`,
-                paymentMethod: "CASH",
-                entryDate: new Date(),
+        const totalAmount = appointment.totalAmount || 0;
+        const commissionPercent = appointment.staff?.commissionPercent || 0;
+
+        // Se é cliente avulso, registra entrada no caixa
+        if (appointment.client?.clientType !== "SUBSCRIBER") {
+            console.log(`[handleAppointmentCompletion] Creating CashEntry for walk-in client`);
+            await prisma.cashEntry.create({
+                data: {
+                    storeId: appointment.storeId,
+                    type: "INCOME",
+                    amount: totalAmount,
+                    description: `Agendamento finalizado - Cliente: ${appointment.client?.name || 'Sem nome'}`,
+                    paymentMethod: "CASH",
+                    entryDate: new Date(),
+                }
+            });
+        }
+
+        // Calcula e gera comissão (para assinantes e avulsos)
+        const commissionAmount = (totalAmount * commissionPercent) / 100;
+        console.log(`[handleAppointmentCompletion] Upserting commission: ${commissionAmount}`);
+        
+        await prisma.commission.upsert({
+            where: { appointmentId: appointment.id },
+            update: {
+                grossAmount: totalAmount,
+                commissionRate: commissionPercent,
+                commissionAmount: commissionAmount,
+            },
+            create: {
+                staffId: appointment.staffId,
+                appointmentId: appointment.id,
+                grossAmount: totalAmount,
+                commissionRate: commissionPercent,
+                commissionAmount: commissionAmount,
+                status: "PENDING",
             }
         });
+        
+        console.log(`[handleAppointmentCompletion] Successfully processed all side effects`);
+    } catch (error) {
+        console.error(`[handleAppointmentCompletion] FATAL ERROR for appointment ${appointmentId}:`, error);
+        throw error; // Re-throw to be caught by the parent action
     }
-
-    // Calcula e gera comissão (para assinantes e avulsos)
-    const commissionAmount = (appointment.totalAmount * appointment.staff.commissionPercent) / 100;
-    await prisma.commission.upsert({
-        where: { appointmentId: appointment.id },
-        update: {
-            grossAmount: appointment.totalAmount,
-            commissionRate: appointment.staff.commissionPercent,
-            commissionAmount: commissionAmount,
-        },
-        create: {
-            staffId: appointment.staffId,
-            appointmentId: appointment.id,
-            grossAmount: appointment.totalAmount,
-            commissionRate: appointment.staff.commissionPercent,
-            commissionAmount: commissionAmount,
-            status: "PENDING",
-        }
-    });
 }

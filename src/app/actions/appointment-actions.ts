@@ -286,13 +286,27 @@ export async function updateAppointmentStatus(id: string, status: string) {
 
         const isCompleting = status === "COMPLETED" && appointment?.status !== "COMPLETED";
 
-        await prisma.appointment.update({
+        const updateData: any = { status: status as any };
+        if (status === "COMPLETED") {
+            updateData.completedAt = new Date();
+        }
+
+        const updatedAppointment = await prisma.appointment.update({
             where: { id },
-            data: { status: status as any }
+            data: updateData,
+            include: { items: true }
         });
 
         if (isCompleting) {
             try {
+                // Se o valor estiver zerado, tenta carregar dos itens
+                if (updatedAppointment.totalAmount <= 0 && updatedAppointment.items.length > 0) {
+                    const total = updatedAppointment.items.reduce((s, i) => s + i.totalPrice, 0);
+                    await prisma.appointment.update({
+                        where: { id },
+                        data: { totalAmount: total }
+                    });
+                }
                 await handleAppointmentCompletion(id);
             } catch (error) {
                 console.error("Side effects (cashier/commission) failed but continuing status update:", error);

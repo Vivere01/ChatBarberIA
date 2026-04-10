@@ -6,7 +6,7 @@ import {
     ArrowUpRight, ArrowDownRight, PlusCircle, Loader2,
     TrendingUp, TrendingDown
 } from "lucide-react";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, Suspense } from "react";
 import { Modal } from "@/components/ui/modal";
 import { getCashEntries, createCashEntry, type CashEntryFilter } from "@/app/actions/cashier-actions";
 import DateRangeFilter from "@/components/admin/date-range-filter";
@@ -32,7 +32,7 @@ const filterLabels: Record<CashEntryFilter, string> = {
 const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-export default function CashierPage() {
+function CashierContent() {
     const searchParams = useSearchParams();
     const [filter, setFilter] = useState<CashEntryFilter>("today");
     const [data, setData] = useState<{ entries: any[]; totalIn: number; totalOut: number; balance: number }>({
@@ -270,5 +270,19 @@ export default function CashierPage() {
                 select.custom-input { appearance: none; }
             `}</style>
         </AdminShell>
+    );
+}
+
+export default function CashierPage() {
+    return (
+        <Suspense fallback={
+            <AdminShell>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+                </div>
+            </AdminShell>
+        }>
+            <CashierContent />
+        </Suspense>
     );
 }

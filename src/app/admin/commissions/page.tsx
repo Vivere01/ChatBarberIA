@@ -2,14 +2,14 @@
 
 import AdminShell from "@/components/admin/admin-shell";
 import { Percent, CheckCircle, Clock, DollarSign, Users, Loader2, UserCheck, User } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { getCommissions, markCommissionPaid } from "@/app/actions/commission-actions";
 import DateRangeFilter from "@/components/admin/date-range-filter";
 import { useSearchParams } from "next/navigation";
 
 const fmt = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-export default function CommissionsPage() {
+function CommissionsContent() {
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [paying, setPayingId] = useState<string | null>(null);
@@ -203,3 +203,18 @@ export default function CommissionsPage() {
         </AdminShell>
     );
 }
+
+export default function CommissionsPage() {
+    return (
+        <Suspense fallback={
+            <AdminShell>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+                </div>
+            </AdminShell>
+        }>
+            <CommissionsContent />
+        </Suspense>
+    );
+}
+

@@ -5,9 +5,12 @@ import { getEffectiveStoreId } from "./shared";
 import { revalidatePath } from "next/cache";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, subDays } from "date-fns";
 
-export type CashEntryFilter = "today" | "yesterday" | "last7" | "thisMonth";
+export type CashEntryFilter = "today" | "yesterday" | "last7" | "thisMonth" | "custom";
 
-export async function getCashEntries(filter: CashEntryFilter = "today") {
+export async function getCashEntries(
+    filter: CashEntryFilter = "today",
+    customRange?: { from: Date; to: Date }
+) {
     try {
         const storeId = await getEffectiveStoreId();
         const now = new Date();
@@ -15,7 +18,11 @@ export async function getCashEntries(filter: CashEntryFilter = "today") {
         let start: Date;
         let end: Date;
 
-        switch (filter) {
+        if (filter === "custom" && customRange) {
+            start = startOfDay(customRange.from);
+            end = endOfDay(customRange.to);
+        } else {
+            switch (filter) {
             case "yesterday":
                 start = startOfDay(subDays(now, 1));
                 end = endOfDay(subDays(now, 1));
@@ -33,6 +40,7 @@ export async function getCashEntries(filter: CashEntryFilter = "today") {
                 start = startOfDay(now);
                 end = endOfDay(now);
                 break;
+            }
         }
 
         const entries = await prisma.cashEntry.findMany({

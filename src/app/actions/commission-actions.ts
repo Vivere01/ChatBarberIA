@@ -5,12 +5,12 @@ import { getEffectiveStoreId, getEffectiveOwnerId } from "./shared";
 import { revalidatePath } from "next/cache";
 import { startOfMonth, endOfMonth } from "date-fns";
 
-export async function getCommissions() {
+export async function getCommissions(dateRange?: { from: Date; to: Date }) {
     try {
         const ownerId = await getEffectiveOwnerId();
         const now = new Date();
-        const start = startOfMonth(now);
-        const end = endOfMonth(now);
+        const start = dateRange?.from || startOfMonth(now);
+        const end = dateRange?.to || endOfMonth(now);
 
         // Busca todas as lojas deste proprietário
         const stores = await prisma.store.findMany({ where: { ownerId }, select: { id: true } });

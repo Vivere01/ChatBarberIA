@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { getDashboardData } from "@/app/actions/dashboard-actions";
+import DateRangeFilter from "@/components/admin/date-range-filter";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
     completed: { label: "Concluído", color: "text-green-400 bg-green-500/10" },
@@ -24,8 +25,17 @@ const levelConfig: Record<string, { emoji: string; class: string }> = {
     RUBI: { emoji: "❤️", class: "badge-rubi" },
 };
 
-export default async function DashboardPage() {
-    const data = await getDashboardData();
+export default async function DashboardPage({
+    searchParams
+}: {
+    searchParams: { from?: string; to?: string }
+}) {
+    const dateRange = searchParams.from && searchParams.to ? {
+        from: new Date(searchParams.from),
+        to: new Date(searchParams.to)
+    } : undefined;
+
+    const data = await getDashboardData(dateRange);
 
     const today = new Date().toLocaleDateString("pt-BR", {
         weekday: "long", day: "numeric", month: "long"
@@ -33,7 +43,7 @@ export default async function DashboardPage() {
 
     const stats = [
         {
-            label: "Receita do Mês",
+            label: "Receita do Período",
             value: formatCurrency(data.monthRevenue),
             icon: DollarSign,
             glow: "stat-glow-green",
@@ -70,9 +80,12 @@ export default async function DashboardPage() {
         <AdminShell>
             <div className="space-y-6">
                 {/* Header */}
-                <div>
-                    <h1 className="font-display text-2xl font-bold">Dashboard</h1>
-                    <p className="text-zinc-500 text-sm mt-1">Visão geral do seu negócio hoje</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="font-display text-2xl font-black uppercase tracking-tighter italic">Dashboard</h1>
+                        <p className="text-zinc-500 text-sm mt-1 font-medium">Resumo operacional do seu negócio</p>
+                    </div>
+                    <DateRangeFilter />
                 </div>
 
                 {/* Stats Grid */}

@@ -28,6 +28,7 @@ export default function ProductsPage() {
         stockQty: string;
         sku: string;
         category: string;
+        commissionPercent: string;
         storeIds: string[];
     }>({
         name: "",
@@ -37,6 +38,7 @@ export default function ProductsPage() {
         stockQty: "0",
         sku: "",
         category: "HAIR",
+        commissionPercent: "0",
         storeIds: [],
     });
 
@@ -82,6 +84,7 @@ export default function ProductsPage() {
                 stockQty: parseInt(formData.stockQty),
                 sku: formData.sku,
                 category: formData.category,
+                commissionPercent: parseFloat(formData.commissionPercent),
             };
 
             let success = true;
@@ -142,6 +145,7 @@ export default function ProductsPage() {
             stockQty: product.stockQty.toString(),
             sku: product.sku || "",
             category: product.category || "HAIR",
+            commissionPercent: product.commissionPercent?.toString() || "0",
             storeIds: [product.storeId],
         });
         setIsModalOpen(true);
@@ -159,6 +163,7 @@ export default function ProductsPage() {
             stockQty: "0",
             sku: "",
             category: "HAIR",
+            commissionPercent: "0",
             storeIds: stores.length > 0 ? [stores[0].id] : [],
         });
     };
@@ -417,6 +422,21 @@ export default function ProductsPage() {
                                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                                     placeholder="Ex: POM-001"
                                     className="w-full bg-dark-700 border border-white/5 rounded-2xl px-6 h-16 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 font-black italic tracking-tight uppercase"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Comissão do Barbeiro (%)</label>
+                            <div className="relative">
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-orange-400 font-black italic uppercase tracking-widest text-[10px]">%</div>
+                                <input
+                                    type="number"
+                                    required
+                                    value={formData.commissionPercent}
+                                    onChange={(e) => setFormData({ ...formData, commissionPercent: e.target.value })}
+                                    placeholder="0"
+                                    className="w-full bg-dark-700 border border-orange-500/10 rounded-2xl px-6 h-16 text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-black italic tracking-tight text-lg"
                                 />
                             </div>
                         </div>

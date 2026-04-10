@@ -9,6 +9,8 @@ import {
 import { useState, useEffect, useTransition } from "react";
 import { Modal } from "@/components/ui/modal";
 import { getCashEntries, createCashEntry, type CashEntryFilter } from "@/app/actions/cashier-actions";
+import DateRangeFilter from "@/components/admin/date-range-filter";
+import { useSearchParams } from "next/navigation";
 
 const paymentLabels: Record<string, string> = {
     CASH: "Dinheiro",
@@ -30,6 +32,7 @@ const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 export default function CashierPage() {
+    const searchParams = useSearchParams();
     const [filter, setFilter] = useState<CashEntryFilter>("today");
     const [data, setData] = useState<{ entries: any[]; totalIn: number; totalOut: number; balance: number }>({
         entries: [], totalIn: 0, totalOut: 0, balance: 0,
@@ -41,12 +44,21 @@ export default function CashierPage() {
 
     const loadData = async (f: CashEntryFilter) => {
         setLoadingData(true);
-        const result = await getCashEntries(f);
-        setData(result);
+        const from = searchParams.get("from");
+        const to = searchParams.get("to");
+
+        if (from && to) {
+            const res = await getCashEntries("custom", { from: new Date(from), to: new Date(to) });
+            setData(res);
+            setFilter("custom");
+        } else {
+            const res = await getCashEntries(f);
+            setData(res);
+        }
         setLoadingData(false);
     };
 
-    useEffect(() => { loadData(filter); }, [filter]);
+    useEffect(() => { loadData(filter); }, [filter, searchParams]);
 
     const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -70,18 +82,21 @@ export default function CashierPage() {
     return (
         <AdminShell>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="font-display text-2xl font-bold italic uppercase tracking-tighter">Caixa</h1>
-                        <p className="text-zinc-500 text-sm mt-1">Movimentações financeiras</p>
+                        <h1 className="font-display text-2xl font-black uppercase tracking-tighter italic">Controle de Caixa</h1>
+                        <p className="text-zinc-500 text-sm mt-1 font-medium italic">Gestão de entradas e saídas</p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-brand"
-                    >
-                        <PlusCircle className="w-4 h-4" />
-                        Novo Lançamento
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <DateRangeFilter />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-brand whitespace-nowrap"
+                        >
+                            <PlusCircle className="w-4 h-4" />
+                            Novo Lançamento
+                        </button>
+                    </div>
                 </div>
 
                 {/* Summary cards */}

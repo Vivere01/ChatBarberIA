@@ -219,6 +219,7 @@ model Product {
   sku              String?
   priceRetail      Float
   priceCost        Float?
+  commissionPercent Float             @default(0)
   stockQty         Int               @default(0)
   imageUrl         String?
   category         String?

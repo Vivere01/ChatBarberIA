@@ -31,6 +31,7 @@ export async function createProduct(data: {
     stockQty?: number;
     sku?: string;
     category?: string;
+    commissionPercent?: number;
     storeId?: string;
 }) {
     try {
@@ -46,6 +47,7 @@ export async function createProduct(data: {
                 stockQty: data.stockQty || 0,
                 sku: data.sku,
                 category: data.category,
+                commissionPercent: data.commissionPercent || 0,
             }
         });
 
@@ -69,6 +71,7 @@ export async function updateProduct(id: string, data: any) {
                 stockQty: data.stockQty,
                 sku: data.sku,
                 category: data.category,
+                commissionPercent: data.commissionPercent,
             }
         });
         return { success: true, product };

@@ -4,10 +4,13 @@ import AdminShell from "@/components/admin/admin-shell";
 import { Percent, CheckCircle, Clock, DollarSign, Users, Loader2, UserCheck, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCommissions, markCommissionPaid } from "@/app/actions/commission-actions";
+import DateRangeFilter from "@/components/admin/date-range-filter";
+import { useSearchParams } from "next/navigation";
 
 const fmt = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 export default function CommissionsPage() {
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [paying, setPayingId] = useState<string | null>(null);
     const [data, setData] = useState<{
@@ -19,12 +22,20 @@ export default function CommissionsPage() {
 
     const load = async () => {
         setLoading(true);
-        const result = await getCommissions();
+        const from = searchParams.get("from");
+        const to = searchParams.get("to");
+        
+        const dateRange = from && to ? {
+            from: new Date(from),
+            to: new Date(to)
+        } : undefined;
+
+        const result = await getCommissions(dateRange);
         setData(result);
         setLoading(false);
     };
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [searchParams]);
 
     const handleMarkPaid = async (staffId: string) => {
         setPayingId(staffId);
@@ -36,9 +47,12 @@ export default function CommissionsPage() {
     return (
         <AdminShell>
             <div className="space-y-6">
-                <div>
-                    <h1 className="font-display text-2xl font-bold">Comissões</h1>
-                    <p className="text-zinc-500 text-sm mt-1">Controle de pagamentos por barbeiro — mês atual</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="font-display text-2xl font-black uppercase tracking-tighter italic">Comissões</h1>
+                        <p className="text-zinc-500 text-sm mt-1 font-medium">Controle de pagamentos profissional</p>
+                    </div>
+                    <DateRangeFilter />
                 </div>
 
                 {/* Totals */}

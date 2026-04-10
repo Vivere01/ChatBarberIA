@@ -276,13 +276,29 @@ export async function getAppointments(date: Date, filterStoreId?: string) {
 
 export async function updateAppointmentStatus(id: string, status: string) {
     try {
+        const appointment = await prisma.appointment.findUnique({
+            where: { id },
+            select: { status: true }
+        });
+
+        const isCompleting = status === "COMPLETED" && appointment?.status !== "COMPLETED";
+
         await prisma.appointment.update({
             where: { id },
             data: { status: status as any }
         });
+
+        if (isCompleting) {
+            await handleAppointmentCompletion(id);
+        }
+
         revalidatePath("/admin/appointments");
+        revalidatePath("/admin/cashier");
+        revalidatePath("/admin/commissions");
+        revalidatePath("/admin/dashboard");
         return { success: true };
     } catch (error) {
+        console.error("Error updating appointment status:", error);
         return { success: false };
     }
 }
@@ -323,6 +339,11 @@ export async function updateAdminAppointment(id: string, data: {
     status?: string;
 }) {
     try {
+        const appointment = await prisma.appointment.findUnique({
+            where: { id },
+            select: { status: true }
+        });
+
         const updateData: any = {};
         if (data.status) updateData.status = data.status;
         if (data.staffId) updateData.staffId = data.staffId;
@@ -341,16 +362,64 @@ export async function updateAdminAppointment(id: string, data: {
             ));
         }
 
-        // If serviceIds change, we need to update items (complex logic, for now keep same items or implement full sync)
-
         await prisma.appointment.update({
             where: { id },
             data: updateData
         });
 
+        if (data.status === "COMPLETED" && appointment?.status !== "COMPLETED") {
+            await handleAppointmentCompletion(id);
+        }
+
         revalidatePath("/admin/appointments");
+        revalidatePath("/admin/cashier");
+        revalidatePath("/admin/commissions");
+        revalidatePath("/admin/dashboard");
         return { success: true };
     } catch (error) {
+        console.error("Error updating admin appointment:", error);
         return { success: false };
     }
+}
+
+async function handleAppointmentCompletion(appointmentId: string) {
+    const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        include: { client: true, staff: true }
+    });
+
+    if (!appointment) return;
+
+    // Se é cliente avulso, registra entrada no caixa
+    if (appointment.client.clientType !== "SUBSCRIBER") {
+        await prisma.cashEntry.create({
+            data: {
+                storeId: appointment.storeId,
+                type: "INCOME",
+                amount: appointment.totalAmount,
+                description: `Agendamento finalizado - Cliente: ${appointment.client.name || 'Sem nome'}`,
+                paymentMethod: "CASH",
+                entryDate: new Date(),
+            }
+        });
+    }
+
+    // Calcula e gera comissão (para assinantes e avulsos)
+    const commissionAmount = (appointment.totalAmount * appointment.staff.commissionPercent) / 100;
+    await prisma.commission.upsert({
+        where: { appointmentId: appointment.id },
+        update: {
+            grossAmount: appointment.totalAmount,
+            commissionRate: appointment.staff.commissionPercent,
+            commissionAmount: commissionAmount,
+        },
+        create: {
+            staffId: appointment.staffId,
+            appointmentId: appointment.id,
+            grossAmount: appointment.totalAmount,
+            commissionRate: appointment.staff.commissionPercent,
+            commissionAmount: commissionAmount,
+            status: "PENDING",
+        }
+    });
 }

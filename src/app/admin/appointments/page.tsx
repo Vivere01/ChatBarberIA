@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { createAdminAppointment, getAppointments, updateAppointmentStatus, deleteAppointment, getClientHistory, updateAdminAppointment } from "@/app/actions/appointment-actions";
 import { getStaffList } from "@/app/actions/staff-actions";
 import { getServicesList } from "@/app/actions/service-actions";
-import { getClientsList } from "@/app/actions/client-actions";
+import { getClientsList, createClient } from "@/app/actions/client-actions";
 import { getWaitlistEntries, updateWaitlistStatus, createAdminWaitlistEntry } from "@/app/actions/waitlist-actions";
 import { getStoreSettings } from "@/app/actions/settings-actions";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ function AppointmentsPageContent() {
     const [editingAptId, setEditingAptId] = useState<string | null>(null);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     const [isAddWaitlistOpen, setIsAddWaitlistOpen] = useState(false);
+    const [isAddClientOpen, setIsAddClientOpen] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     
     const [clientHistory, setClientHistory] = useState<any[]>([]);
@@ -317,7 +318,7 @@ function AppointmentsPageContent() {
                                                 <option value="">Selecione o Cliente</option>
                                                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                             </select>
-                                            <button type="button" className="w-14 h-14 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20"><UserPlus className="w-5 h-5" /></button>
+                                            <button type="button" onClick={() => setIsAddClientOpen(true)} className="w-14 h-14 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all border border-brand-500/20"><UserPlus className="w-5 h-5" /></button>
                                         </div>
                                     </Section>
                                     <Section label="PROFISSIONAL">
@@ -519,6 +520,45 @@ function AppointmentsPageContent() {
                         </div>
                     ))}
                 </div>
+            </Modal>
+
+            {/* ADICIONAR CLIENTE RAPIDAMENTE */}
+            <Modal isOpen={isAddClientOpen} onClose={() => setIsAddClientOpen(false)} title="Novo Cliente">
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setLoading(true);
+                    const formDataObj = new FormData(e.currentTarget);
+                    const name = formDataObj.get("name") as string;
+                    const phone = formDataObj.get("phone") as string;
+                    if (!name) return alert("Pelo menos o nome é obrigatório.");
+                    
+                    const res = await createClient({
+                        name,
+                        phone,
+                        clientType: "WALK_IN"
+                    });
+                    
+                    if (res.success) {
+                        await loadData();
+                        setIsAddClientOpen(false);
+                        if (res.client) {
+                            setFormData(prev => ({ ...prev, clientId: res.client!.id }));
+                        }
+                    } else {
+                        alert(res.error);
+                    }
+                    setLoading(false);
+                }} className="space-y-6">
+                    <Section label="NOME DO CLIENTE">
+                        <input name="name" required placeholder="Ex: João Silva" className="custom-input !h-14" />
+                    </Section>
+                    <Section label="TELEFONE (Opcional)">
+                        <input name="phone" placeholder="Ex: 11999999999" className="custom-input !h-14" />
+                    </Section>
+                    <button type="submit" disabled={loading} className="w-full h-14 bg-brand-gradient text-white rounded-2xl font-black uppercase tracking-widest">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "CADASTRAR E SELECIONAR"}
+                    </button>
+                </form>
             </Modal>
 
             <Modal isOpen={isAddWaitlistOpen} onClose={() => setIsAddWaitlistOpen(false)} title="Adicionar à Lista de Espera">

@@ -26,6 +26,7 @@ const filterLabels: Record<CashEntryFilter, string> = {
     yesterday: "Ontem",
     last7: "Últimos 7 dias",
     thisMonth: "Este mês",
+    custom: "Personalizado",
 };
 
 const fmt = (v: number) =>

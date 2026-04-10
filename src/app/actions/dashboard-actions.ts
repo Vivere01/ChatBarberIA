@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getEffectiveStoreId } from "./shared";
+import { getEffectiveStoreId, getEffectiveOwnerId } from "./shared";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 
 export async function getDashboardData() {

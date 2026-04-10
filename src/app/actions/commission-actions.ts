@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getEffectiveStoreId } from "./shared";
+import { getEffectiveStoreId, getEffectiveOwnerId } from "./shared";
 import { revalidatePath } from "next/cache";
 import { startOfMonth, endOfMonth } from "date-fns";
 

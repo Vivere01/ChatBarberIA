@@ -470,8 +470,41 @@ function AppointmentsPageContent() {
                                 {editingAptId && (
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-3">
-                                            <button onClick={() => updateAppointmentStatus(editingAptId, 'COMPLETED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-4 h-4" /> FINALIZAR</button>
-                                            <button onClick={() => updateAppointmentStatus(editingAptId, 'CANCELLED').then(loadData).then(() => setIsModalOpen(false))} className="flex items-center justify-center gap-2 h-14 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all"><XCircle className="w-4 h-4" /> FALTOU/CAN</button>
+                                            <button 
+                                                onClick={() => {
+                                                    setLoading(true);
+                                                    updateAppointmentStatus(editingAptId, 'COMPLETED').then(res => {
+                                                        if (res.success) {
+                                                            loadData();
+                                                            setIsModalOpen(false);
+                                                        } else {
+                                                            alert("Erro ao finalizar: " + (res.error || "Erro desconhecido"));
+                                                        }
+                                                    }).finally(() => setLoading(false));
+                                                }} 
+                                                disabled={loading}
+                                                className="flex items-center justify-center gap-2 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50"
+                                            >
+                                                <CheckCircle className="w-4 h-4" /> FINALIZAR
+                                            </button>
+                                            
+                                            <button 
+                                                onClick={() => {
+                                                    setLoading(true);
+                                                    updateAppointmentStatus(editingAptId, 'CANCELLED').then(res => {
+                                                        if (res.success) {
+                                                            loadData();
+                                                            setIsModalOpen(false);
+                                                        } else {
+                                                            alert("Erro ao cancelar: " + (res.error || "Erro desconhecido"));
+                                                        }
+                                                    }).finally(() => setLoading(false));
+                                                }} 
+                                                disabled={loading}
+                                                className="flex items-center justify-center gap-2 h-14 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all disabled:opacity-50"
+                                            >
+                                                <XCircle className="w-4 h-4" /> FALTOU/CAN
+                                            </button>
                                         </div>
                                         <button 
                                             onClick={async () => {

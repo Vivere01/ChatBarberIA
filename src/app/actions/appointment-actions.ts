@@ -195,6 +195,9 @@ export async function createAdminAppointment(data: {
         const totalDuration = services.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
         const totalAmount = services.reduce((acc, s) => acc + s.price, 0);
 
+        const client = await prisma.client.findUnique({ where: { id: data.clientId } });
+        if (!client) return { success: false, error: "Cliente selecionado não foi encontrado no banco de dados." };
+
         const appointment = await prisma.appointment.create({
             data: {
                 storeId,

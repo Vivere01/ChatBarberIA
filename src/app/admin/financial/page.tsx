@@ -50,7 +50,7 @@ export default async function FinancialPage({
                             </div>
                             <p className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">Receita Bruta</p>
                         </div>
-                        <p className="text-3xl font-black text-green-400 font-display italic tracking-tighter">{formatCurrency(revenue)}</p>
+                        <p className="text-3xl font-black text-green-400 font-display italic tracking-tighter">{formatCurrency(revenue || 0)}</p>
                         <div className="flex items-center gap-2 mt-2">
                              <TrendingUp className="w-3 h-3 text-green-500" />
                              <span className="text-[10px] text-zinc-600 font-bold uppercase">Entradas totais</span>
@@ -64,7 +64,7 @@ export default async function FinancialPage({
                             </div>
                             <p className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">Custos Totais</p>
                         </div>
-                        <p className="text-3xl font-black text-red-400 font-display italic tracking-tighter">{formatCurrency(expense)}</p>
+                        <p className="text-3xl font-black text-red-400 font-display italic tracking-tighter">{formatCurrency(expense || 0)}</p>
                         <div className="flex items-center gap-2 mt-2">
                              <span className="text-[10px] text-zinc-600 font-bold uppercase italic">Saídas manuais + fixas</span>
                         </div>
@@ -77,7 +77,7 @@ export default async function FinancialPage({
                             </div>
                             <p className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">Lucro Líquido</p>
                         </div>
-                        <p className="text-3xl font-black text-blue-400 font-display italic tracking-tighter">{formatCurrency(profit)}</p>
+                        <p className="text-3xl font-black text-blue-400 font-display italic tracking-tighter">{formatCurrency(profit || 0)}</p>
                         <div className="flex items-center gap-2 mt-2 text-zinc-600 uppercase font-black text-[10px]">
                              Margem de {margin.toFixed(1)}%
                         </div>
@@ -90,7 +90,7 @@ export default async function FinancialPage({
                             </div>
                             <p className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">LTV Médio</p>
                         </div>
-                        <p className="text-3xl font-black text-white font-display italic tracking-tighter">{formatCurrency(data.avgLTV)}</p>
+                        <p className="text-3xl font-black text-white font-display italic tracking-tighter">{formatCurrency(data.avgLTV || 0)}</p>
                         <p className="text-[10px] text-zinc-600 mt-2 font-bold uppercase">Valor médio por cliente</p>
                     </div>
                 </div>
@@ -104,7 +104,7 @@ export default async function FinancialPage({
                          <div className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Ticket Médio</span>
-                                <span className="text-lg font-black text-white italic">{formatCurrency(data.avgTicket)}</span>
+                                <span className="text-lg font-black text-white italic">{formatCurrency(data.avgTicket || 0)}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Agendamentos Únicos</span>

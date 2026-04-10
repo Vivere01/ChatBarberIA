@@ -44,7 +44,7 @@ export default async function DashboardPage({
     const stats = [
         {
             label: "Receita do Período",
-            value: formatCurrency(data.monthRevenue),
+            value: formatCurrency(data.monthRevenue || 0),
             icon: DollarSign,
             glow: "stat-glow-green",
             color: "text-green-400",
@@ -68,7 +68,7 @@ export default async function DashboardPage({
         },
         {
             label: "Ticket Médio",
-            value: formatCurrency(data.avgTicket),
+            value: formatCurrency(data.avgTicket || 0),
             icon: TrendingUp,
             glow: "stat-glow-orange",
             color: "text-brand-400",

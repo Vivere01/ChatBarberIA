@@ -115,8 +115,10 @@ export async function getDashboardData(dateRange?: { from: Date; to: Date }) {
             appointmentsCount: 0,
             clientsCount: 0,
             avgTicket: 0,
+            avgLTV: 0,
             todayAppointments: [],
             topStaff: [],
+            period: { from: new Date(), to: new Date() }
         };
     }
 }

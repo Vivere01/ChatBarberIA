@@ -66,7 +66,7 @@ export default function CommissionsPage() {
                         </div>
                         {loading
                             ? <div className="h-8 w-28 bg-white/5 animate-pulse rounded-lg" />
-                            : <p className="text-2xl font-bold text-yellow-400">{fmt(data.totalPending)}</p>
+                            : <p className="text-2xl font-bold text-yellow-400">{fmt(data.totalPending || 0)}</p>
                         }
                     </div>
                     <div className="glass-card rounded-2xl p-5 stat-glow-green">
@@ -78,7 +78,7 @@ export default function CommissionsPage() {
                         </div>
                         {loading
                             ? <div className="h-8 w-28 bg-white/5 animate-pulse rounded-lg" />
-                            : <p className="text-2xl font-bold text-green-400">{fmt(data.totalPaid)}</p>
+                            : <p className="text-2xl font-bold text-green-400">{fmt(data.totalPaid || 0)}</p>
                         }
                     </div>
                     <div className="glass-card rounded-2xl p-5">
@@ -90,7 +90,7 @@ export default function CommissionsPage() {
                         </div>
                         {loading
                             ? <div className="h-8 w-28 bg-white/5 animate-pulse rounded-lg" />
-                            : <p className="text-2xl font-bold">{fmt(data.totalCommission)}</p>
+                            : <p className="text-2xl font-bold">{fmt(data.totalCommission || 0)}</p>
                         }
                     </div>
                 </div>

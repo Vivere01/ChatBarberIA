@@ -420,7 +420,6 @@ async function handleAppointmentCompletion(appointmentId: string) {
                 data: {
                     storeId: appointment.storeId,
                     type: "INCOME",
-                    category: "SERVICO",
                     amount: appointment.totalAmount,
                     description: `Serviço: ${appointment.client?.name || 'Cliente'} - Ag. #${appointment.id.slice(-4)}`,
                     entryDate: entryDate,

@@ -7,16 +7,20 @@ import { startOfMonth, endOfMonth } from "date-fns";
 
 export async function getCommissions() {
     try {
-        const storeId = await getEffectiveStoreId();
+        const ownerId = await getEffectiveOwnerId();
         const now = new Date();
         const start = startOfMonth(now);
         const end = endOfMonth(now);
 
-        // Busca todas as comissões do mês para essa loja agrupadas por barbeiro
+        // Busca todas as lojas deste proprietário
+        const stores = await prisma.store.findMany({ where: { ownerId }, select: { id: true } });
+        const storeIds = stores.map(s => s.id);
+
+        // Busca todas as comissões do mês para essas lojas agrupadas por barbeiro
         const commissions = await prisma.commission.findMany({
             where: {
                 appointment: {
-                    storeId,
+                    storeId: { in: storeIds },
                     scheduledAt: { gte: start, lte: end },
                 },
             },

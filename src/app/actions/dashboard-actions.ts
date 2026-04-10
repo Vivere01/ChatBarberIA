@@ -6,39 +6,42 @@ import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 
 export async function getDashboardData() {
     try {
-        const storeId = await getEffectiveStoreId();
+        const ownerId = await getEffectiveOwnerId();
         const now = new Date();
         const monthStart = startOfMonth(now);
         const monthEnd = endOfMonth(now);
         const dayStart = startOfDay(now);
         const dayEnd = endOfDay(now);
 
-        // Receita do mês (agendamentos COMPLETED + entradas de caixa INCOME)
+        // Busca todas as lojas deste proprietário
+        const stores = await prisma.store.findMany({ where: { ownerId }, select: { id: true } });
+        const storeIds = stores.map(s => s.id);
+
         const [completedAppointments, cashIncomeMonth, cashExpenseMonth, appointmentsThisMonth, clientsTotal, todayAppointments, topStaff] = await Promise.all([
-            // Agendamentos concluídos no mês
+            // Agendamentos concluídos no mês (Todas as lojas)
             prisma.appointment.findMany({
-                where: { storeId, status: "COMPLETED", scheduledAt: { gte: monthStart, lte: monthEnd } },
+                where: { storeId: { in: storeIds }, status: "COMPLETED", scheduledAt: { gte: monthStart, lte: monthEnd } },
                 select: { totalAmount: true },
             }),
-            // Entradas de caixa do mês
+            // Entradas de caixa do mês (Todas as lojas)
             prisma.cashEntry.aggregate({
-                where: { storeId, type: "INCOME", entryDate: { gte: monthStart, lte: monthEnd } },
+                where: { storeId: { in: storeIds }, type: "INCOME", entryDate: { gte: monthStart, lte: monthEnd } },
                 _sum: { amount: true },
             }),
             // Saídas de caixa do mês
             prisma.cashEntry.aggregate({
-                where: { storeId, type: "EXPENSE", entryDate: { gte: monthStart, lte: monthEnd } },
+                where: { storeId: { in: storeIds }, type: "EXPENSE", entryDate: { gte: monthStart, lte: monthEnd } },
                 _sum: { amount: true },
             }),
             // Total de agendamentos do mês (não cancelados)
             prisma.appointment.count({
-                where: { storeId, scheduledAt: { gte: monthStart, lte: monthEnd }, status: { not: "CANCELLED" } },
+                where: { storeId: { in: storeIds }, scheduledAt: { gte: monthStart, lte: monthEnd }, status: { not: "CANCELLED" } },
             }),
-            // Clientes ativos (com ao menos 1 agendamento)
-            prisma.clientStore.count({ where: { storeId } }),
+            // Clientes ativos
+            prisma.clientStore.count({ where: { storeId: { in: storeIds } } }),
             // Agendamentos de hoje
             prisma.appointment.findMany({
-                where: { storeId, scheduledAt: { gte: dayStart, lte: dayEnd }, status: { not: "CANCELLED" } },
+                where: { storeId: { in: storeIds }, scheduledAt: { gte: dayStart, lte: dayEnd }, status: { not: "CANCELLED" } },
                 include: {
                     client: { select: { name: true } },
                     staff: { select: { name: true } },
@@ -49,7 +52,7 @@ export async function getDashboardData() {
             }),
             // Top barbeiros do mês por faturamento
             prisma.staff.findMany({
-                where: { storeId, isActive: true },
+                where: { storeId: { in: storeIds }, isActive: true },
                 include: {
                     appointments: {
                         where: { status: "COMPLETED", scheduledAt: { gte: monthStart, lte: monthEnd } },

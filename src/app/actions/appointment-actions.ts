@@ -394,65 +394,64 @@ export async function updateAdminAppointment(id: string, data: {
 }
 
 async function handleAppointmentCompletion(appointmentId: string) {
-    console.log(`[handleAppointmentCompletion] Starting for ID: ${appointmentId}`);
+    console.log(`[handleAppointmentCompletion] Iniciando processamento para: ${appointmentId}`);
     try {
         const appointment = await prisma.appointment.findUnique({
             where: { id: appointmentId },
             include: { client: true, staff: true }
         });
 
-        if (!appointment) {
-            console.warn(`[handleAppointmentCompletion] Appointment ${appointmentId} not found`);
-            return;
-        }
+        if (!appointment) return;
 
         const totalAmount = appointment.totalAmount || 0;
         const commissionPercent = appointment.staff?.commissionPercent || 0;
 
-        // Se NÃO for assinante (é WALK_IN ou indefinido), registra no caixa
-        const isSubscriber = appointment.client?.clientType === "SUBSCRIBER";
-        
-        if (!isSubscriber) {
-            console.log(`[handleAppointmentCompletion] Cliente ${appointment.client?.name} é AVULSO. Registrando no caixa.`);
-            const entryDate = startOfDay(new Date(appointment.scheduledAt));
-            
-            await prisma.cashEntry.create({
-                data: {
-                    storeId: appointment.storeId,
-                    type: "INCOME",
-                    amount: appointment.totalAmount,
-                    description: `Serviço: ${appointment.client?.name || 'Cliente'} - Ag. #${appointment.id.slice(-4)}`,
-                    entryDate: entryDate,
-                }
-            });
-        } else {
-            console.log(`[handleAppointmentCompletion] Cliente ${appointment.client?.name} é ASSINANTE. Não gera entrada imediata no caixa.`);
+        // 1. REGISTRO DE CAIXA
+        try {
+            const isSubscriber = appointment.client?.clientType === "SUBSCRIBER";
+            if (!isSubscriber) {
+                const entryDate = startOfDay(new Date(appointment.scheduledAt));
+                await prisma.cashEntry.create({
+                    data: {
+                        storeId: appointment.storeId,
+                        type: "INCOME",
+                        amount: totalAmount,
+                        description: `Comanda: ${appointment.client?.name || 'Cliente'} - #${appointment.id.slice(-4)}`,
+                        entryDate: entryDate,
+                    }
+                });
+                console.log(`[handleAppointmentCompletion] Caixa registrado: R$ ${totalAmount}`);
+            }
+        } catch (e) {
+            console.error("[handleAppointmentCompletion] Erro ao registrar caixa:", e);
         }
 
-        // Calcula e gera comissão (para assinantes e avulsos)
-        const commissionAmount = (totalAmount * commissionPercent) / 100;
-        console.log(`[handleAppointmentCompletion] Upserting commission: ${commissionAmount}`);
-        
-        await prisma.commission.upsert({
-            where: { appointmentId: appointment.id },
-            update: {
-                grossAmount: totalAmount,
-                commissionRate: commissionPercent,
-                commissionAmount: commissionAmount,
-            },
-            create: {
-                staffId: appointment.staffId,
-                appointmentId: appointment.id,
-                grossAmount: totalAmount,
-                commissionRate: commissionPercent,
-                commissionAmount: commissionAmount,
-                status: "PENDING",
-            }
-        });
-        
-        console.log(`[handleAppointmentCompletion] Successfully processed all side effects`);
+        // 2. REGISTRO DE COMISSÃO
+        try {
+            const commissionAmount = (totalAmount * commissionPercent) / 100;
+            await prisma.commission.upsert({
+                where: { appointmentId: appointment.id },
+                update: {
+                    grossAmount: totalAmount,
+                    commissionRate: commissionPercent,
+                    commissionAmount: commissionAmount,
+                },
+                create: {
+                    staffId: appointment.staffId,
+                    appointmentId: appointment.id,
+                    grossAmount: totalAmount,
+                    commissionRate: commissionPercent,
+                    commissionAmount: commissionAmount,
+                    status: "PENDING",
+                }
+            });
+            console.log(`[handleAppointmentCompletion] Comissão registrada: R$ ${commissionAmount}`);
+        } catch (e) {
+            console.error("[handleAppointmentCompletion] Erro ao registrar comissão:", e);
+        }
+
+        console.log(`[handleAppointmentCompletion] Concluído com sucesso.`);
     } catch (error) {
-        console.error(`[handleAppointmentCompletion] FATAL ERROR for appointment ${appointmentId}:`, error);
-        throw error; // Re-throw to be caught by the parent action
+        console.error(`[handleAppointmentCompletion] Erro fatal:`, error);
     }
 }

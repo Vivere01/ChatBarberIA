@@ -1,8 +1,71 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import AdminShell from "@/components/admin/admin-shell";
 import { FeatureBarrier } from "@/components/admin/feature-barrier";
-import { Bot, Zap, Key, RefreshCw, Link2, CheckCircle } from "lucide-react";
+import { Bot, Zap, Key, RefreshCw, Link2, CheckCircle, Copy, Check } from "lucide-react";
+import { getApiKey, regenerateApiKey, updateAiSettings } from "@/app/actions/ai-actions";
 
 export default function AiPage() {
+    const [apiKey, setApiKey] = useState("cb_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    const [ownerId, setOwnerId] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
+    const [regenerating, setRegenerating] = useState(false);
+    
+    // WhatsApp settings state
+    const [evolutionUrl, setEvolutionUrl] = useState("");
+    const [whatsappToken, setWhatsappToken] = useState("");
+    const [savingAi, setSavingAi] = useState(false);
+
+    useEffect(() => {
+        async function loadData() {
+            const res = await getApiKey();
+            if (res.success) {
+                setApiKey(res.apiKey || "");
+                setOwnerId(res.ownerId || "");
+            }
+            setLoading(false);
+        }
+        loadData();
+    }, []);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(apiKey);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleRegenerate = async () => {
+        if (!confirm("Tem certeza que deseja regenerar sua chave de API? A chave antiga parará de funcionar imediatamente.")) {
+            return;
+        }
+
+        setRegenerating(true);
+        const res = await regenerateApiKey();
+        if (res.success) {
+            setApiKey(res.apiKey || "");
+            alert("A chave de API foi regenerada com sucesso!");
+        } else {
+            alert(res.error || "Erro ao regenerar chave.");
+        }
+        setRegenerating(false);
+    };
+
+    const handleSaveAiSettings = async () => {
+        setSavingAi(true);
+        const res = await updateAiSettings({
+            evolutionApiUrl: evolutionUrl,
+            whatsappToken: whatsappToken
+        });
+        if (res.success) {
+            alert("Configurações de integração atualizadas!");
+        } else {
+            alert(res.error || "Erro ao salvar configurações.");
+        }
+        setSavingAi(false);
+    };
+
     return (
         <AdminShell>
             <FeatureBarrier feature="AI_WHATSAPP">
@@ -25,11 +88,30 @@ export default function AiPage() {
                                 </div>
                             </div>
                             <div className="bg-dark-700 rounded-xl p-3 font-mono text-sm text-zinc-300 flex items-center justify-between gap-3 mb-4">
-                                <span className="truncate">cb_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
-                                <button className="text-brand-400 hover:text-brand-300 transition-colors flex-shrink-0">Copiar</button>
+                                <span className="truncate">{loading ? "Carregando..." : apiKey}</span>
+                                <button 
+                                    onClick={handleCopy}
+                                    className="text-brand-400 hover:text-brand-300 transition-colors flex-shrink-0 flex items-center gap-1.5"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            <span>Copiado</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="w-4 h-4" />
+                                            <span>Copiar</span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
-                            <button className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors">
-                                <RefreshCw className="w-4 h-4" />
+                            <button 
+                                onClick={handleRegenerate}
+                                disabled={regenerating}
+                                className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${regenerating ? "animate-spin" : ""}`} />
                                 Regenerar chave
                             </button>
                         </div>
@@ -55,7 +137,7 @@ export default function AiPage() {
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-zinc-400">Endpoint</span>
-                                    <code className="text-xs bg-dark-700 px-2 py-1 rounded text-brand-400">/api/v1/mcp</code>
+                                    <code className="text-xs bg-dark-700 px-2 py-1 rounded text-brand-400">/api/v1/{ownerId || "{owner_id}"}/mcp</code>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-zinc-400">Versão</span>
@@ -81,6 +163,8 @@ export default function AiPage() {
                                     <input
                                         type="url"
                                         placeholder="https://api.evolution.seudominio.com"
+                                        value={evolutionUrl}
+                                        onChange={(e) => setEvolutionUrl(e.target.value)}
                                         className="w-full bg-dark-700 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-green-500/40 transition-all"
                                     />
                                 </div>
@@ -89,12 +173,18 @@ export default function AiPage() {
                                     <input
                                         type="password"
                                         placeholder="••••••••••••••"
+                                        value={whatsappToken}
+                                        onChange={(e) => setWhatsappToken(e.target.value)}
                                         className="w-full bg-dark-700 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-green-500/40 transition-all"
                                     />
                                 </div>
                             </div>
-                            <button className="w-full bg-green-500/10 border border-green-500/25 text-green-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-500/15 transition-all">
-                                Conectar WhatsApp
+                            <button 
+                                onClick={handleSaveAiSettings}
+                                disabled={savingAi}
+                                className="w-full bg-green-500/10 border border-green-500/25 text-green-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-500/15 transition-all disabled:opacity-50"
+                            >
+                                {savingAi ? "Salvando..." : "Conectar WhatsApp"}
                             </button>
                         </div>
 
@@ -134,25 +224,28 @@ export default function AiPage() {
 
                     {/* API Endpoints Reference */}
                     <div className="glass-card rounded-2xl p-6">
-                        <div className="flex items-center gap-2 mb-5">
-                            <Link2 className="w-5 h-5 text-brand-400" />
-                            <h2 className="font-semibold">Endpoints da API</h2>
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2">
+                                <Link2 className="w-5 h-5 text-brand-400" />
+                                <h2 className="font-semibold">Endpoints da API</h2>
+                            </div>
+                            <p className="text-[10px] text-zinc-500 font-mono">Header: Authorization: Bearer {apiKey.substring(0, 10)}...</p>
                         </div>
                         <div className="space-y-3">
                             {[
-                                { method: "GET", path: "/api/v1/{owner_id}/clients", desc: "Listar todos os clientes" },
-                                { method: "GET", path: "/api/v1/{owner_id}/appointments", desc: "Listar agendamentos" },
-                                { method: "POST", path: "/api/v1/{owner_id}/appointments", desc: "Criar agendamento via IA" },
-                                { method: "GET", path: "/api/v1/{owner_id}/services", desc: "Listar serviços disponíveis" },
-                                { method: "GET", path: "/api/v1/{owner_id}/staff", desc: "Listar barbeiros" },
-                                { method: "GET", path: "/api/v1/{owner_id}/ai-context", desc: "Contexto de treinamento da IA" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/clients`, desc: "Listar todos os clientes" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/appointments`, desc: "Listar agendamentos" },
+                                { method: "POST", path: `/api/v1/${ownerId || "{owner_id}"}/appointments`, desc: "Criar agendamento via IA" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/services`, desc: "Listar serviços disponíveis" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/staff`, desc: "Listar barbeiros" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/ai-context`, desc: "Contexto de treinamento da IA" },
                             ].map((ep) => (
                                 <div key={ep.path} className="flex items-center gap-4 p-3 bg-dark-700 rounded-xl">
-                                    <span className={`text-xs font-bold font-mono px-2 py-1 rounded ${ep.method === "GET" ? "bg-blue-500/15 text-blue-400" : "bg-green-500/15 text-green-400"
+                                    <span className={`text-xs font-bold font-mono px-2 py-1 rounded w-16 text-center ${ep.method === "GET" ? "bg-blue-500/15 text-blue-400" : "bg-green-500/15 text-green-400"
                                         }`}>
                                         {ep.method}
                                     </span>
-                                    <code className="text-sm text-zinc-300 font-mono flex-1">{ep.path}</code>
+                                    <code className="text-[13px] text-zinc-300 font-mono flex-1 truncate">{ep.path}</code>
                                     <span className="text-xs text-zinc-500 hidden md:block">{ep.desc}</span>
                                 </div>
                             ))}
@@ -163,3 +256,4 @@ export default function AiPage() {
         </AdminShell>
     );
 }
+

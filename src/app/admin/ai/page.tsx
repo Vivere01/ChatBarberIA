@@ -231,7 +231,7 @@ export default function AiPage() {
                             </div>
                             <p className="text-[10px] text-zinc-500 font-mono">Header: Authorization: Bearer {apiKey.substring(0, 10)}...</p>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-3 mb-6">
                             {[
                                 { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/clients`, desc: "Listar todos os clientes" },
                                 { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/appointments`, desc: "Listar agendamentos" },
@@ -249,6 +249,34 @@ export default function AiPage() {
                                     <span className="text-xs text-zinc-500 hidden md:block">{ep.desc}</span>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* cURL Example */}
+                        <div className="pt-6 border-t border-white/5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Bot className="w-5 h-5 text-zinc-400" />
+                                <h2 className="font-semibold text-sm">Exemplo de Requisição (cURL)</h2>
+                            </div>
+                            <div className="relative group">
+                                <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[13px] text-zinc-300 overflow-x-auto border border-white/5 leading-relaxed">
+                                    {`curl -X GET "https://seu-dominio.com/api/v1/${ownerId || "{owner_id}"}/clients" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json"`}
+                                </pre>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`curl -X GET "https://seu-dominio.com/api/v1/${ownerId || "{owner_id}"}/clients" -H "Authorization: Bearer ${apiKey}" -H "Content-Type: application/json"`);
+                                        alert("Comando cURL copiado!");
+                                    }}
+                                    className="absolute top-3 right-3 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                    title="Copiar comando cURL"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-[11px] text-zinc-500 mt-3">
+                                Substitua <code className="text-zinc-400">seu-dominio.com</code> pela URL do seu sistema em produção.
+                            </p>
                         </div>
                     </div>
                 </div>

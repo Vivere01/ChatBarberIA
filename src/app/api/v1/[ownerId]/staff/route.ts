@@ -45,3 +45,45 @@ export async function GET(
         return apiError(error.message);
     }
 }
+
+export async function POST(
+    req: NextRequest,
+    { params }: { params: { ownerId: string } }
+) {
+    try {
+        const owner = await authenticateApiRequest(req);
+
+        if (owner.id !== params.ownerId) {
+            return apiError("Unauthorized: Token does not match the requested owner ID.", 403);
+        }
+
+        const body = await req.json();
+        const { name, storeId, role, avatarUrl } = body;
+
+        if (!name || !storeId) {
+            return apiError("Missing required fields: name, storeId", 400);
+        }
+
+        const staff = await prisma.staff.create({
+            data: {
+                name,
+                storeId,
+                role: role || 'BARBEIRO',
+                avatarUrl,
+                isActive: true
+            }
+        });
+
+        return apiResponse({
+            success: true,
+            staff: {
+                id: staff.id,
+                name: staff.name,
+                role: staff.role
+            }
+        }, 201);
+    } catch (error: any) {
+        return apiError(error.message, 500);
+    }
+}
+

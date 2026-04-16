@@ -234,11 +234,14 @@ export default function AiPage() {
                         <div className="space-y-3 mb-6">
                             {[
                                 { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/clients`, desc: "Listar todos os clientes" },
+                                { method: "POST", path: `/api/v1/${ownerId || "{owner_id}"}/clients`, desc: "Criar novo cliente" },
                                 { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/appointments`, desc: "Listar agendamentos" },
                                 { method: "POST", path: `/api/v1/${ownerId || "{owner_id}"}/appointments`, desc: "Criar agendamento via IA" },
-                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/services`, desc: "Listar serviços disponíveis" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/services`, desc: "Listar serviços" },
+                                { method: "POST", path: `/api/v1/${ownerId || "{owner_id}"}/services`, desc: "Criar serviço" },
                                 { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/staff`, desc: "Listar barbeiros" },
-                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/ai-context`, desc: "Contexto de treinamento da IA" },
+                                { method: "POST", path: `/api/v1/${ownerId || "{owner_id}"}/staff`, desc: "Criar membro da equipe" },
+                                { method: "GET", path: `/api/v1/${ownerId || "{owner_id}"}/ai-context`, desc: "Contexto de treinamento" },
                             ].map((ep) => (
                                 <div key={ep.path} className="flex items-center gap-4 p-3 bg-dark-700 rounded-xl">
                                     <span className={`text-xs font-bold font-mono px-2 py-1 rounded w-16 text-center ${ep.method === "GET" ? "bg-blue-500/15 text-blue-400" : "bg-green-500/15 text-green-400"
@@ -251,31 +254,142 @@ export default function AiPage() {
                             ))}
                         </div>
 
-                        {/* cURL Example */}
-                        <div className="pt-6 border-t border-white/5">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Bot className="w-5 h-5 text-zinc-400" />
-                                <h2 className="font-semibold text-sm">Exemplo de Requisição (cURL)</h2>
-                            </div>
-                            <div className="relative group">
-                                <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[13px] text-zinc-300 overflow-x-auto border border-white/5 leading-relaxed">
-                                    {`curl -X GET "https://seu-dominio.com/api/v1/${ownerId || "{owner_id}"}/clients" \\
+                        {/* cURL & Body Examples */}
+                        <div className="pt-6 border-t border-white/5 space-y-8">
+                            <div>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Bot className="w-5 h-5 text-zinc-400" />
+                                    <h2 className="font-semibold text-sm text-zinc-300">Exemplo de Requisição (GET Clients)</h2>
+                                </div>
+                                <div className="relative group">
+                                    <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[13px] text-zinc-300 overflow-x-auto border border-white/5 leading-relaxed">
+                                        {`curl -X GET "https://seu-dominio.com/api/v1/${ownerId || "{owner_id}"}/clients" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json"`}
-                                </pre>
-                                <button 
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(`curl -X GET "https://seu-dominio.com/api/v1/${ownerId || "{owner_id}"}/clients" -H "Authorization: Bearer ${apiKey}" -H "Content-Type: application/json"`);
-                                        alert("Comando cURL copiado!");
-                                    }}
-                                    className="absolute top-3 right-3 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                    title="Copiar comando cURL"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                </button>
+                                    </pre>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`curl -X GET "https://seu-dominio.com/api/v1/${ownerId || "{owner_id}"}/clients" -H "Authorization: Bearer ${apiKey}" -H "Content-Type: application/json"`);
+                                            alert("Copiado!");
+                                        }}
+                                        className="absolute top-3 right-3 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                        title="Copiar comando cURL"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
+
+                            <div>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Zap className="w-5 h-5 text-brand-400" />
+                                    <h2 className="font-semibold text-sm text-zinc-300">Exemplos de Request Body (POST)</h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Client Body */}
+                                    <div className="space-y-2">
+                                        <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold ml-1">POST /clients</div>
+                                        <div className="relative group">
+                                            <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[12px] text-zinc-300 border border-white/5 leading-relaxed overflow-x-auto">
+                                                {`{
+  "name": "João Silva",
+  "phone": "11999999999",
+  "email": "joao@email.com",
+  "cpf": "123.456.789-00"
+}`}
+                                            </pre>
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(JSON.stringify({ name: "João Silva", phone: "11999999999", email: "joao@email.com", cpf: "123.456.789-00" }, null, 2));
+                                                    alert("JSON Copiado!");
+                                                }}
+                                                className="absolute top-3 right-3 p-1.5 bg-white/5 hover:bg-white/10 rounded-md text-zinc-400"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Appointment Body */}
+                                    <div className="space-y-2">
+                                        <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold ml-1">POST /appointments</div>
+                                        <div className="relative group">
+                                            <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[12px] text-zinc-300 border border-white/5 leading-relaxed overflow-x-auto">
+                                                {`{
+  "clientId": "uuid-cliente",
+  "serviceId": "uuid-servico",
+  "staffId": "uuid-barbeiro",
+  "storeId": "uuid-loja",
+  "scheduledAt": "2024-04-16T10:00:00Z",
+  "notes": "Agendamento via IA"
+}`}
+                                            </pre>
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(JSON.stringify({ clientId: "uuid-cliente", serviceId: "uuid-servico", staffId: "uuid-barbeiro", storeId: "uuid-loja", scheduledAt: "2024-04-16T10:00:00Z", notes: "Agendamento via IA" }, null, 2));
+                                                    alert("JSON Copiado!");
+                                                }}
+                                                className="absolute top-3 right-3 p-1.5 bg-white/5 hover:bg-white/10 rounded-md text-zinc-400"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Service Body */}
+                                    <div className="space-y-2">
+                                        <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold ml-1">POST /services</div>
+                                        <div className="relative group">
+                                            <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[12px] text-zinc-300 border border-white/5 leading-relaxed overflow-x-auto">
+                                                {`{
+  "name": "Corte Moderno",
+  "storeId": "uuid-loja",
+  "price": 50.00,
+  "durationMinutes": 30,
+  "category": "CABELO",
+  "description": "Corte degradê"
+}`}
+                                            </pre>
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(JSON.stringify({ name: "Corte Moderno", storeId: "uuid-loja", price: 50.00, durationMinutes: 30, category: "CABELO", description: "Corte degradê" }, null, 2));
+                                                    alert("JSON Copiado!");
+                                                }}
+                                                className="absolute top-3 right-3 p-1.5 bg-white/5 hover:bg-white/10 rounded-md text-zinc-400"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Staff Body */}
+                                    <div className="space-y-2">
+                                        <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold ml-1">POST /staff</div>
+                                        <div className="relative group">
+                                            <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[12px] text-zinc-300 border border-white/5 leading-relaxed overflow-x-auto">
+                                                {`{
+  "name": "Carlos Barbeiro",
+  "storeId": "uuid-loja",
+  "role": "BARBEIRO",
+  "avatarUrl": "https://..."
+}`}
+                                            </pre>
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(JSON.stringify({ name: "Carlos Barbeiro", storeId: "uuid-loja", role: "BARBEIRO", avatarUrl: "https://..." }, null, 2));
+                                                    alert("JSON Copiado!");
+                                                }}
+                                                className="absolute top-3 right-3 p-1.5 bg-white/5 hover:bg-white/10 rounded-md text-zinc-400"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <p className="text-[11px] text-zinc-500 mt-3">
-                                Substitua <code className="text-zinc-400">seu-dominio.com</code> pela URL do seu sistema em produção.
+                                Substitua <code className="text-zinc-400">seu-dominio.com</code> pela URL do seu sistema e use os UUIDs reais retornados pelos endpoints de listagem.
                             </p>
                         </div>
                     </div>

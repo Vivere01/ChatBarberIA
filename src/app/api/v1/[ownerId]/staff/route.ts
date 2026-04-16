@@ -68,7 +68,7 @@ export async function POST(
             data: {
                 name,
                 storeId,
-                role: role || 'BARBEIRO',
+                role: role || 'STAFF',
                 avatarUrl,
                 isActive: true
             }

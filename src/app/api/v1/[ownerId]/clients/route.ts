@@ -68,7 +68,7 @@ export async function POST(
                 email,
                 phone,
                 cpf,
-                clientType: 'AVULSO',
+                clientType: 'WALK_IN',
                 isActive: true
             }
         });

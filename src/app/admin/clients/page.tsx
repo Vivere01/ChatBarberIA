@@ -160,8 +160,20 @@ export default function ClientsPage() {
                             {filteredClients.map((client) => (
                                 <div key={client.id} className="glass-card rounded-2xl p-6 hover:border-white/15 transition-all group relative overflow-visible">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center border border-white/5 text-xl font-bold font-display text-brand-400">
-                                            {client.name.charAt(0).toUpperCase()}
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center border border-white/5 text-xl font-bold font-display text-brand-400">
+                                                {client.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(client.id);
+                                                    alert("ID do Cliente Copiado!");
+                                                }}
+                                                className="text-[8px] font-mono text-zinc-600 hover:text-brand-400 transition-colors bg-white/5 px-1 rounded"
+                                                title="Copiar ID para IA"
+                                            >
+                                                {client.id.substring(0, 6)}
+                                            </button>
                                         </div>
 
                                         <div className="relative">

@@ -245,7 +245,20 @@ export default function ServicesPage() {
                                         </div>
                                     </div>
 
-                                    <h3 className="text-xl font-black font-display italic uppercase tracking-tight text-white mb-2 truncate">{service.name}</h3>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-xl font-black font-display italic uppercase tracking-tight text-white truncate">{service.name}</h3>
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(service.id);
+                                                alert("ID do Serviço Copiado!");
+                                            }}
+                                            className="text-[9px] font-mono text-zinc-600 hover:text-brand-400 transition-colors flex items-center gap-1 bg-white/5 px-2 py-1 rounded-lg"
+                                            title="Copiar ID do Serviço para IA"
+                                        >
+                                            ID: {service.id.substring(0, 8)}...
+                                            <Copy className="w-2.5 h-2.5" />
+                                        </button>
+                                    </div>
                                     
                                     <div className="flex items-center gap-2 mb-6">
                                         <div className="flex items-center gap-1.5 text-zinc-500 bg-dark-900/50 px-3 py-1 rounded-full border border-white/5">

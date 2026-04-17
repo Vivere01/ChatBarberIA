@@ -33,7 +33,7 @@ export async function GET(
     }
 }
 
-// MCP usually uses POST for tool execution
+// MCP uses POST for tool discovery and execution
 export async function POST(
     req: NextRequest,
     { params }: { params: { ownerId: string } }
@@ -46,15 +46,101 @@ export async function POST(
         }
 
         const body = await req.json();
-        // Here you would implement the logic to handle MCP JSON-RPC calls
-        // For now, return a generic placeholder that shows the endpoint is working
-        
+        const { method, params: rpcParams, id } = body;
+
+        let result: any = null;
+
+        switch (method) {
+            case "mcp.list_tools":
+                result = {
+                    tools: [
+                        {
+                            name: "get_system_context",
+                            description: "Retorna a estrutura completa de unidades, serviços e barbeiros.",
+                            inputSchema: { type: "object", properties: {} }
+                        },
+                        {
+                            name: "search_clients",
+                            description: "Busca clientes por nome ou telefone.",
+                            inputSchema: {
+                                type: "object",
+                                properties: {
+                                    query: { type: "string", description: "Nome ou telefone do cliente" }
+                                },
+                                required: ["query"]
+                            }
+                        },
+                        {
+                            name: "get_dashboard_stats",
+                            description: "Retorna estatísticas rápidas do dashboard (clientes e agendamentos).",
+                            inputSchema: { type: "object", properties: {} }
+                        }
+                    ]
+                };
+                break;
+
+            case "mcp.call_tool":
+                const { name, arguments: args } = rpcParams;
+                
+                if (name === "get_system_context") {
+                    const [stores, services, staff] = await Promise.all([
+                        prisma.store.findMany({ where: { ownerId: owner.id }, select: { id: true, name: true } }),
+                        prisma.service.findMany({ where: { store: { ownerId: owner.id } }, select: { id: true, name: true, price: true, storeId: true } }),
+                        prisma.staff.findMany({ where: { store: { ownerId: owner.id } }, select: { id: true, name: true, storeId: true } })
+                    ]);
+                    result = {
+                        content: [{
+                            type: "text",
+                            text: JSON.stringify({ stores, services, staff })
+                        }]
+                    };
+                } 
+                else if (name === "search_clients") {
+                    const clients = await prisma.client.findMany({
+                        where: {
+                            ownerId: owner.id,
+                            OR: [
+                                { name: { contains: args.query, mode: 'insensitive' } },
+                                { phone: { contains: args.query } }
+                            ]
+                        },
+                        take: 5
+                    });
+                    result = {
+                        content: [{
+                            type: "text",
+                            text: JSON.stringify(clients)
+                        }]
+                    };
+                }
+                else if (name === "get_dashboard_stats") {
+                    const [clientCount, appointmentCount] = await Promise.all([
+                        prisma.client.count({ where: { ownerId: owner.id } }),
+                        prisma.appointment.count({ where: { store: { ownerId: owner.id } } })
+                    ]);
+                    result = {
+                        content: [{
+                            type: "text",
+                            text: JSON.stringify({ totalClientes: clientCount, totalAgendamentos: appointmentCount })
+                        }]
+                    };
+                } else {
+                    return apiError(`Ferramenta '${name}' não encontrada.`, 404);
+                }
+                break;
+
+            default:
+                // Se não for MCP puro, podemos aceitar outros métodos ou retornar erro
+                return apiError(`Método '${method}' não suportado pelo servidor MCP ChatBarber.`, 400);
+        }
+
         return apiResponse({
             jsonrpc: "2.0",
-            id: body.id,
-            result: "MCP Tool execution placeholder. Use specific endpoints for direct data access."
+            id,
+            result
         });
     } catch (error: any) {
-        return apiError(error.message);
+        console.error("[MCP_POST_ERROR]", error);
+        return apiError(error.message, 500);
     }
 }

@@ -193,7 +193,20 @@ export default function StaffPage() {
                                         <div className="flex-1 min-w-0 pr-2">
                                             <h3 className="font-black text-[15px] font-display italic uppercase text-white block truncate w-full max-w-[120px] md:max-w-[160px]">{member.name}</h3>
                                             <div className="flex flex-col gap-1 mt-1">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">{member.role}</span>
+                                                <div className="flex items-center gap-2 group/id">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">{member.role}</span>
+                                                    <button 
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(member.id);
+                                                            alert("ID Copiado!");
+                                                        }}
+                                                        className="opacity-0 group-hover/id:opacity-100 transition-opacity text-[8px] font-mono text-zinc-600 hover:text-brand-400 flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded cursor-pointer"
+                                                        title="Copiar ID para IA"
+                                                    >
+                                                        ID: {member.id.substring(0, 8)}...
+                                                        <Plus className="w-2.5 h-2.5 rotate-45" />
+                                                    </button>
+                                                </div>
                                                 <div className="flex items-center gap-1.5 text-zinc-500">
                                                     <Building2 className="w-3 h-3 text-zinc-600" />
                                                     <span className="text-[9px] font-black uppercase tracking-widest truncate max-w-[120px]">{member.store?.name}</span>

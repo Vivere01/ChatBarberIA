@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import AdminShell from "@/components/admin/admin-shell";
 import { FeatureBarrier } from "@/components/admin/feature-barrier";
 import { Bot, Zap, Key, RefreshCw, Link2, CheckCircle, Copy, Check } from "lucide-react";
-import { getApiKey, regenerateApiKey, updateAiSettings } from "@/app/actions/ai-actions";
+import { getApiKey, regenerateApiKey, updateAiSettings, getAiKnowledgeBase } from "@/app/actions/ai-actions";
 
 export default function AiPage() {
     const [apiKey, setApiKey] = useState("cb_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -17,6 +17,10 @@ export default function AiPage() {
     const [evolutionUrl, setEvolutionUrl] = useState("");
     const [whatsappToken, setWhatsappToken] = useState("");
     const [savingAi, setSavingAi] = useState(false);
+
+    // Knowledge base state
+    const [kbData, setKbData] = useState<any>(null);
+    const [generatingKb, setGeneratingKb] = useState(false);
 
     useEffect(() => {
         async function loadData() {
@@ -64,6 +68,17 @@ export default function AiPage() {
             alert(res.error || "Erro ao salvar configurações.");
         }
         setSavingAi(false);
+    };
+
+    const handleGenerateKb = async () => {
+        setGeneratingKb(true);
+        const res = await getAiKnowledgeBase();
+        if (res.success) {
+            setKbData(res.data);
+        } else {
+            alert(res.error || "Erro ao gerar base de conhecimento.");
+        }
+        setGeneratingKb(false);
     };
 
     return (
@@ -188,37 +203,60 @@ export default function AiPage() {
                             </button>
                         </div>
 
-                        {/* AI Training */}
-                        <div className="glass-card rounded-2xl p-6">
+                        {/* AI Training & Knowledge Base */}
+                        <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
                             <div className="flex items-center gap-3 mb-5">
                                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                                    <RefreshCw className="w-5 h-5 text-blue-400" />
+                                    <RefreshCw className={`w-5 h-5 text-blue-400 ${generatingKb ? "animate-spin" : ""}`} />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold">Treinamento da IA</h2>
-                                    <p className="text-zinc-500 text-xs">Sincronize os dados para treinar a IA</p>
+                                    <h2 className="font-semibold">Contexto para Agentes IA</h2>
+                                    <p className="text-zinc-500 text-xs text-balance">Gere o mapeamento de IDs para seu robô (N8N, FlowWise, etc.)</p>
                                 </div>
                             </div>
-                            <div className="space-y-2.5 mb-5">
-                                {[
-                                    { label: "Clientes cadastrados", count: "1.240", done: true },
-                                    { label: "Histórico de agendamentos", count: "8.450", done: true },
-                                    { label: "Serviços e preços", count: "24", done: true },
-                                    { label: "Avaliações NPS", count: "100", done: false },
-                                ].map((item) => (
-                                    <div key={item.label} className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className={`w-4 h-4 ${item.done ? "text-green-400" : "text-zinc-600"}`} />
-                                            <span className="text-zinc-300">{item.label}</span>
-                                        </div>
-                                        <span className="text-zinc-500">{item.count}</span>
+                            
+                            {kbData ? (
+                                <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                                    <div className="relative">
+                                        <pre className="bg-dark-900 rounded-xl p-4 font-mono text-[10px] text-zinc-400 border border-white/5 overflow-y-auto max-h-[200px] leading-relaxed scrollbar-thin">
+                                            {JSON.stringify(kbData, null, 2)}
+                                        </pre>
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(JSON.stringify(kbData, null, 2));
+                                                alert("JSON Copiado!");
+                                            }}
+                                            className="absolute top-3 right-3 p-2 bg-brand-500 text-white rounded-lg hover:scale-105 transition-all shadow-lg"
+                                            title="Copiar JSON completo"
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                ))}
-                            </div>
-                            <button className="w-full bg-blue-500/10 border border-blue-500/25 text-blue-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-500/15 transition-all flex items-center justify-center gap-2">
-                                <RefreshCw className="w-4 h-4" />
-                                Sincronizar e Treinar IA
-                            </button>
+                                    <p className="text-[10px] text-zinc-500 font-medium italic">
+                                        💡 Cole este JSON nas instruções do seu agente IA para que ele saiba quais IDs usar.
+                                    </p>
+                                    <button 
+                                        onClick={handleGenerateKb}
+                                        className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+                                    >
+                                        Atualizar Dados
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="bg-dark-900/50 rounded-xl p-4 border border-dashed border-white/10 text-center">
+                                        <p className="text-xs text-zinc-500">Ainda não gerado</p>
+                                    </div>
+                                    <button 
+                                        onClick={handleGenerateKb}
+                                        disabled={generatingKb}
+                                        className="w-full bg-blue-500/10 border border-blue-500/25 text-blue-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-500/15 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {generatingKb ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                                        Gerar Base de Conhecimento
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

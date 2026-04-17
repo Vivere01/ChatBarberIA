@@ -93,3 +93,44 @@ export async function updateAiSettings(data: {
         return { error: "Erro ao atualizar configurações de IA." };
     }
 }
+
+/**
+ * Gets a structured map of all IDs needed for an AI Agent.
+ */
+export async function getAiKnowledgeBase() {
+    try {
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
+            return { error: "Não autorizado." };
+        }
+
+        const ownerId = (session.user as any).id;
+
+        const [stores, services, staff, plans] = await Promise.all([
+            prisma.store.findMany({ where: { ownerId }, select: { id: true, name: true, slug: true } }),
+            prisma.service.findMany({ 
+                where: { store: { ownerId } }, 
+                select: { id: true, name: true, price: true, store: { select: { name: true } } } 
+            }),
+            prisma.staff.findMany({ 
+                where: { store: { ownerId } }, 
+                select: { id: true, name: true, store: { select: { name: true } } } 
+            }),
+            prisma.subscriptionPlan.findMany({ where: { ownerId }, select: { id: true, name: true, price: true } })
+        ]);
+
+        return {
+            success: true,
+            data: {
+                filiais: stores.map(s => ({ id: s.id, nome: s.name, slug: s.slug })),
+                servicos: services.map(s => ({ id: s.id, nome: s.name, preco: s.price, unidade: s.store.name })),
+                barbeiros: staff.map(s => ({ id: s.id, nome: s.name, unidade: s.store.name })),
+                planos: plans.map(p => ({ id: p.id, nome: p.name, preco: p.price }))
+            }
+        };
+    } catch (err) {
+        console.error("Action Error [getAiKnowledgeBase]:", err);
+        return { error: "Erro ao buscar base de conhecimento." };
+    }
+}
+

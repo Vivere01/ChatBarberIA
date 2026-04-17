@@ -171,9 +171,22 @@ export default function StoresPage() {
 
                                 {/* Info */}
                                 <div className="flex-1 mb-6">
-                                    <h3 className="text-xl font-black font-display italic uppercase tracking-tighter text-white mb-3 line-clamp-2">
-                                        {store.name}
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2 mb-3">
+                                        <h3 className="text-xl font-black font-display italic uppercase tracking-tighter text-white line-clamp-2">
+                                            {store.name}
+                                        </h3>
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(store.id);
+                                                alert("ID da Unidade Copiado!");
+                                            }}
+                                            className="text-[9px] font-mono text-zinc-600 hover:text-brand-400 transition-colors bg-white/5 px-2 py-1 rounded-lg shrink-0"
+                                            title="Copiar ID para IA"
+                                        >
+                                            {store.id.substring(0, 6)}
+                                            <ExternalLink className="w-2.5 h-2.5 inline ml-1 rotate-45" />
+                                        </button>
+                                    </div>
                                     <div className="space-y-2">
                                         <a
                                             href={`/${store.slug}`}

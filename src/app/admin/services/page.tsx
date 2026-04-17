@@ -1,7 +1,7 @@
 "use client";
 
 import AdminShell from "@/components/admin/admin-shell";
-import { Plus, Search, MoreVertical, Scissors, Clock, Save, Loader2, DollarSign, Wrench, Edit2, Trash2, Building2, CheckCircle } from "lucide-react";
+import { Plus, Search, MoreVertical, Scissors, Clock, Save, Loader2, DollarSign, Wrench, Edit2, Trash2, Building2, CheckCircle, Copy } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { formatCurrency } from "@/lib/utils";

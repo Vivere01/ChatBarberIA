@@ -1,7 +1,7 @@
 "use client";
 
 import AdminShell from "@/components/admin/admin-shell";
-import { Plus, MoreVertical, UserCog, Loader2, Save, Mail, Phone, Trash2, Edit2, X, Camera, Building2 } from "lucide-react";
+import { Plus, MoreVertical, UserCog, Loader2, Save, Mail, Phone, Trash2, Edit2, X, Camera, Building2, Copy } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { useState, useEffect, useRef } from "react";

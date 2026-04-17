@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/admin/admin-shell";
 import { FeatureBarrier } from "@/components/admin/feature-barrier";
-import { Bot, Zap, Key, RefreshCw, Link2, CheckCircle, Copy, Check } from "lucide-react";
+import { Bot, Zap, Key, RefreshCw, Link2, CheckCircle, Copy, Check, Loader2 } from "lucide-react";
 import { getApiKey, regenerateApiKey, updateAiSettings, getAiKnowledgeBase } from "@/app/actions/ai-actions";
 
 export default function AiPage() {

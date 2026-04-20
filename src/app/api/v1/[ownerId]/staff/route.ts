@@ -7,10 +7,10 @@ export async function GET(
     { params }: { params: { ownerId: string } }
 ) {
     try {
-        const owner = await authenticateApiRequest(req);
+        const owner = await authenticateApiRequest(req, params.ownerId);
 
-        if (owner.id !== params.ownerId) {
-            return apiError("Unauthorized: Token does not match the requested owner ID.", 403);
+        if (!owner) {
+            return apiError("Unauthorized", 401);
         }
 
         const staff = await prisma.staff.findMany({
@@ -51,10 +51,10 @@ export async function POST(
     { params }: { params: { ownerId: string } }
 ) {
     try {
-        const owner = await authenticateApiRequest(req);
+        const owner = await authenticateApiRequest(req, params.ownerId);
 
-        if (owner.id !== params.ownerId) {
-            return apiError("Unauthorized: Token does not match the requested owner ID.", 403);
+        if (!owner) {
+            return apiError("Unauthorized", 401);
         }
 
         const body = await req.json();

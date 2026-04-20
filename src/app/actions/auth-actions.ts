@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { slugify } from "@/lib/utils";
 
 const registerSchema = z.object({
     name: z.string().min(2, "Nome muito curto"),
@@ -29,12 +30,26 @@ export async function registerOwner(data: z.infer<typeof registerSchema>) {
 
         // Create owner and store in a transaction
         const result = await prisma.$transaction(async (tx) => {
+            let baseSlug = slugify(validated.name);
+            let ownerSlug = baseSlug;
+            let counter = 1;
+
+            while (true) {
+                const existing = await tx.owner.findUnique({
+                    where: { slug: ownerSlug }
+                });
+                if (!existing) break;
+                ownerSlug = `${baseSlug}-${counter}`;
+                counter++;
+            }
+
             const owner = await tx.owner.create({
                 data: {
                     name: validated.name,
                     email: validated.email,
                     passwordHash,
                     phone: validated.phone,
+                    slug: ownerSlug,
                 }
             });
 
@@ -42,7 +57,7 @@ export async function registerOwner(data: z.infer<typeof registerSchema>) {
                 data: {
                     ownerId: owner.id,
                     name: validated.storeName,
-                    slug: validated.storeName.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, ""),
+                    slug: slugify(validated.storeName),
                 }
             });
 

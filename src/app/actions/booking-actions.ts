@@ -2,10 +2,15 @@
 
 import { prisma } from "@/lib/db";
 
-export async function getStoreForBooking(storeId: string) {
+export async function getStoreForBooking(identifier: string) {
     try {
-        const store = await prisma.store.findUnique({
-            where: { id: storeId },
+        const store = await prisma.store.findFirst({
+            where: {
+                OR: [
+                    { id: identifier },
+                    { slug: identifier }
+                ]
+            },
             include: {
                 banners: {
                     where: { isActive: true },

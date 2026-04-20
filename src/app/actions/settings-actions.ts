@@ -3,6 +3,72 @@
 import { prisma } from "@/lib/db";
 import { getAuthSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { slugify } from "@/lib/utils";
+
+export async function getAccountSettings() {
+    try {
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
+            return { error: "Não autorizado." };
+        }
+
+        const owner = await prisma.owner.findUnique({
+            where: { id: (session.user as any).id },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                email: true
+            }
+        });
+
+        return { success: true, account: owner };
+    } catch (err) {
+        console.error("Action Error [getAccountSettings]:", err);
+        return { error: "Erro ao buscar dados da conta." };
+    }
+}
+
+export async function updateAccountSettings(data: {
+    name: string;
+    slug: string;
+}) {
+    try {
+        const session = await getAuthSession();
+        if (!session?.user || (session.user as any).role !== 'OWNER') {
+            return { error: "Não autorizado." };
+        }
+
+        const ownerId = (session.user as any).id;
+        const finalSlug = slugify(data.slug);
+
+        // Check if slug is taken by another owner
+        if (finalSlug) {
+            const existing = await prisma.owner.findFirst({
+                where: { 
+                    slug: finalSlug,
+                    id: { not: ownerId }
+                }
+            });
+            if (existing) return { error: "Este slug já está em uso por outra conta." };
+        }
+
+        await prisma.owner.update({
+            where: { id: ownerId },
+            data: {
+                name: data.name,
+                slug: finalSlug || null
+            }
+        });
+
+        revalidatePath("/admin/settings");
+        return { success: true };
+    } catch (err) {
+        console.error("Action Error [updateAccountSettings]:", err);
+        return { error: "Erro ao salvar dados da conta." };
+    }
+}
+
 
 export async function getGatewaySettings() {
     try {

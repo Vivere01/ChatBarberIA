@@ -3,8 +3,8 @@
 import AdminShell from "@/components/admin/admin-shell";
 import { Settings, Save, Clock, Bell, Shield, Paintbrush, CreditCard, Copy, CheckCircle2, Loader2, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getGatewaySettings, updateGatewaySettings, getStoreSettings, updateStoreSettings } from "@/app/actions/settings-actions";
-import { cn } from "@/lib/utils";
+import { getGatewaySettings, updateGatewaySettings, getStoreSettings, updateStoreSettings, getAccountSettings, updateAccountSettings } from "@/app/actions/settings-actions";
+import { cn, slugify } from "@/lib/utils";
 
 const WEEKDAYS = [
     { id: 0, name: "Domingo" },
@@ -21,6 +21,13 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [copied, setCopied] = useState(false);
+
+    // Account settings
+    const [accountData, setAccountData] = useState({
+        name: "",
+        slug: "",
+        email: ""
+    });
 
     // Gateway settings
     const [gatewayData, setGatewayData] = useState({
@@ -44,10 +51,19 @@ export default function SettingsPage() {
 
     const loadAll = async () => {
         setFetching(true);
-        const [gateRes, storeRes] = await Promise.all([
+        const [accRes, gateRes, storeRes] = await Promise.all([
+            getAccountSettings(),
             getGatewaySettings(),
             getStoreSettings()
         ]);
+
+        if (accRes.success && accRes.account) {
+            setAccountData({
+                name: (accRes.account as any).name || "",
+                slug: (accRes.account as any).slug || "",
+                email: (accRes.account as any).email || ""
+            });
+        }
 
         if (gateRes.success && gateRes.settings) {
             setGatewayData({
@@ -67,6 +83,17 @@ export default function SettingsPage() {
             });
         }
         setFetching(false);
+    };
+
+    const handleSaveAccount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const res = await updateAccountSettings({
+            name: accountData.name,
+            slug: accountData.slug
+        });
+        if (res.success) alert("Perfil atualizado!"); else alert(res.error);
+        setLoading(false);
     };
 
     const handleSaveGateway = async (e: React.FormEvent) => {
@@ -260,17 +287,63 @@ export default function SettingsPage() {
                                 )}
 
                                 {activeTab === "Geral" && (
-                                    <div className="glass-card rounded-3xl p-8 space-y-6 border border-white/5 bg-dark-800/20 shadow-2xl">
-                                        <h2 className="font-bold flex items-center gap-2">
-                                            <Settings className="w-5 h-5 text-brand-400" />
-                                            Perfil do Sistema
-                                        </h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Nome do Negócio</label>
-                                                <input type="text" placeholder="Minha Barbearia" className="w-full h-14 bg-dark-800 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500/30 outline-none" />
-                                            </div>
+                                    <div className="glass-card rounded-3xl p-8 space-y-8 border border-white/5 bg-dark-800/20 shadow-2xl">
+                                        <div>
+                                            <h2 className="font-bold text-lg flex items-center gap-3">
+                                                <Settings className="w-5 h-5 text-brand-400" /> Perfil da Conta
+                                            </h2>
+                                            <p className="text-zinc-500 text-xs uppercase tracking-widest font-black mt-1">Configurações principais do seu sistema</p>
                                         </div>
+
+                                        <form onSubmit={handleSaveAccount} className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Nome do Proprietário / Negócio</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={accountData.name}
+                                                        onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
+                                                        placeholder="Ex: Cartel Barbearia" 
+                                                        className="w-full h-14 bg-dark-800 border border-white/8 rounded-xl px-4 text-sm font-medium text-white focus:border-brand-500/30 outline-none" 
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Slug da API (URL Amigável)</label>
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="text" 
+                                                            value={accountData.slug}
+                                                            onChange={(e) => setAccountData({ ...accountData, slug: slugify(e.target.value) })}
+                                                            placeholder="minha-barbearia" 
+                                                            className="w-full h-14 bg-dark-800 border border-white/8 rounded-xl px-4 text-sm font-medium text-brand-400 focus:border-brand-500/30 outline-none font-mono" 
+                                                        />
+                                                    </div>
+                                                    {accountData.slug && (
+                                                        <p className="text-[9px] text-zinc-600 font-bold uppercase italic mt-1">
+                                                            Sua API será: <span className="text-zinc-400">/api/v1/{accountData.slug}/...</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">E-mail da Conta</label>
+                                                    <input 
+                                                        type="email" 
+                                                        disabled
+                                                        value={accountData.email}
+                                                        className="w-full h-14 bg-dark-800 border border-white/8 rounded-xl px-4 text-sm font-medium text-zinc-500 outline-none opacity-50 cursor-not-allowed" 
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-6 border-t border-white/5 flex justify-end">
+                                                <button type="submit" disabled={loading} className="h-14 px-10 bg-brand-gradient text-white rounded-xl font-black uppercase tracking-widest text-[11px] shadow-brand flex items-center gap-2">
+                                                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                    Salvar Perfil
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
                                 )}
 

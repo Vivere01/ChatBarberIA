@@ -7,11 +7,7 @@ export async function GET(
     { params }: { params: { ownerId: string } }
 ) {
     try {
-        const owner = await authenticateApiRequest(req);
-
-        if (owner.id !== params.ownerId) {
-            return apiError("Unauthorized: Token does not match the requested owner ID.", 403);
-        }
+        const owner = await authenticateApiRequest(req, params.ownerId);
 
         const aiContext = await prisma.aiContext.findUnique({
             where: { ownerId: owner.id }

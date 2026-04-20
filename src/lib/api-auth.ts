@@ -3,9 +3,9 @@ import { NextRequest } from "next/server";
 
 /**
  * Authenticates an API request using the Bearer token (API Key).
- * Returns the owner object if valid, otherwise throws an error.
+ * Also verifies if the token belongs to the owner identified by 'requestedIdentifier' (ID or Slug).
  */
-export async function authenticateApiRequest(req: NextRequest) {
+export async function authenticateApiRequest(req: NextRequest, requestedIdentifier?: string) {
     const authHeader = req.headers.get("authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -24,11 +24,22 @@ export async function authenticateApiRequest(req: NextRequest) {
             id: true,
             name: true,
             email: true,
+            slug: true,
         }
     });
 
     if (!owner) {
         throw new Error("Invalid API Key.");
+    }
+
+    // If an identifier is provided in the URL, verify it matches the owner (by ID or Slug)
+    if (requestedIdentifier) {
+        const matchesId = owner.id === requestedIdentifier;
+        const matchesSlug = owner.slug && owner.slug === requestedIdentifier;
+
+        if (!matchesId && !matchesSlug) {
+            throw new Error("Unauthorized: The provided API key does not correspond to the requested owner ID or slug.");
+        }
     }
 
     return owner;

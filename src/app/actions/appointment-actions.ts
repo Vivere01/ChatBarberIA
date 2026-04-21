@@ -326,10 +326,19 @@ export async function updateAppointmentStatus(id: string, status: string) {
 
 export async function deleteAppointment(id: string) {
     try {
-        await prisma.appointment.delete({ where: { id } });
+        const ownerId = await getEffectiveOwnerId();
+        // Usamos deleteMany para evitar erro caso o registro já tenha sido excluido
+        // e garantimos que pertence a uma loja do dono atual.
+        await prisma.appointment.deleteMany({ 
+            where: { 
+                id,
+                store: { ownerId }
+            } 
+        });
         revalidatePath("/admin/appointments");
         return { success: true };
     } catch (error) {
+        console.error("Action Error [deleteAppointment]:", error);
         return { success: false };
     }
 }

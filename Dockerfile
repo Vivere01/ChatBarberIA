@@ -26,4 +26,4 @@ ENV HOST=0.0.0.0
 EXPOSE 3000
 
 # Loop para aguardar o banco de dados ficar pronto antes de iniciar o app
-CMD until npx prisma db push; do echo "Aguardando banco de dados..." && sleep 2; done && npm run start
+CMD ["sh", "-c", "until npx prisma db push; do echo 'Aguardando banco de dados...' && sleep 2; done && npm run start"]

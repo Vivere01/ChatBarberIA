@@ -9,8 +9,14 @@ export async function GET(
     try {
         const owner = await authenticateApiRequest(req, params.ownerId);
 
+        const { searchParams } = new URL(req.url);
+        const phone = searchParams.get("phone");
+
         const clients = await prisma.client.findMany({
-            where: { ownerId: owner.id },
+            where: { 
+                ownerId: owner.id,
+                ...(phone ? { phone: { contains: phone } } : {})
+            },
             include: {
                 clientStores: true,
                 subscription: true,

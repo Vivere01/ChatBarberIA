@@ -11,6 +11,7 @@ export async function GET(
 
         const stores = await prisma.store.findMany({
             where: { ownerId: owner.id },
+            include: { businessHours: true },
             orderBy: { name: 'asc' }
         });
 
@@ -19,9 +20,18 @@ export async function GET(
             stores: stores.map(s => ({
                 id: s.id,
                 name: s.name,
+                slug: s.slug,
                 address: s.address,
                 phone: s.phone,
-                isActive: true // Como o modelo Store não tem isActive no schema padrão, assumimos true
+                isActive: s.isActive,
+                businessHours: s.businessHours.map(bh => ({
+                    dayOfWeek: bh.dayOfWeek,
+                    isOpen: bh.isOpen,
+                    openTime: bh.openTime,
+                    closeTime: bh.closeTime,
+                    breakStart: bh.breakStart,
+                    breakEnd: bh.breakEnd
+                }))
             }))
         });
     } catch (error: any) {

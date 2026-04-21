@@ -36,6 +36,11 @@ export async function GET(
                 totalSpent: c.totalSpent,
                 isDefaulter: c.isDefaulter,
                 isActive: c.isActive,
+                subscription: c.subscription ? {
+                    id: c.subscription.id,
+                    status: c.subscription.status,
+                    planId: c.subscription.planId
+                } : null,
                 createdAt: c.createdAt,
             }))
         });

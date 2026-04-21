@@ -9,16 +9,12 @@ export async function GET(
     try {
         const owner = await authenticateApiRequest(req, params.ownerId);
 
-        const { searchParams } = new URL(req.url);
-        const phone = searchParams.get("phone");
-
+        // Buscamos todos os clientes do owner. 
+        // A IA cuidará de filtrar por telefone ou nome de forma inteligente (fuzzy search)
+        // para evitar problemas com formatações tipo (22) 99999-9999.
         const clients = await prisma.client.findMany({
-            where: { 
-                ownerId: owner.id,
-                ...(phone ? { phone: { contains: phone } } : {})
-            },
+            where: { ownerId: owner.id },
             include: {
-                clientStores: true,
                 subscription: true,
             },
             orderBy: { name: 'asc' }
@@ -39,56 +35,14 @@ export async function GET(
                 subscription: c.subscription ? {
                     id: c.subscription.id,
                     status: c.subscription.status,
-                    planId: c.subscription.planId
-                } : null,
-                createdAt: c.createdAt,
+                    startDate: c.subscription.startDate,
+                    endDate: c.subscription.endDate,
+                    plan: c.subscription.planId
+                } : null
             }))
         });
     } catch (error: any) {
-        return apiError(error.message);
+        console.error("GET_CLIENTS_ERROR:", error);
+        return apiError(error.message || "Internal Server Error", 500);
     }
 }
-
-export async function POST(
-    req: NextRequest,
-    { params }: { params: { ownerId: string } }
-) {
-    try {
-        const owner = await authenticateApiRequest(req, params.ownerId);
-
-        const body = await req.json();
-        const { name, email, phone, cpf } = body;
-
-        if (!name || !phone) {
-            return apiError("Missing required fields: name, phone", 400);
-        }
-
-        const client = await prisma.client.create({
-            data: {
-                ownerId: owner.id,
-                name,
-                email,
-                phone,
-                cpf,
-                clientType: 'WALK_IN',
-                isActive: true
-            }
-        });
-
-        return apiResponse({
-            success: true,
-            client: {
-                id: client.id,
-                name: client.name,
-                email: client.email,
-                phone: client.phone
-            }
-        }, 201);
-    } catch (error: any) {
-        if ((error as any).code === 'P2002') {
-            return apiError("A client with this email or phone already exists.", 400);
-        }
-        return apiError(error.message, 500);
-    }
-}
-

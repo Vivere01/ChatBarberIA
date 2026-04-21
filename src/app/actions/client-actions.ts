@@ -139,7 +139,8 @@ export async function updateClient(id: string, data: any) {
 export async function deleteClient(id: string) {
     try {
         const ownerId = await getEffectiveOwnerId();
-        await prisma.client.delete({
+        // Usamos deleteMany para evitar erro caso o registro já tenha sido excluido
+        await prisma.client.deleteMany({
             where: { id, ownerId }
         });
         return { success: true };

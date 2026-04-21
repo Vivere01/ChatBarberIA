@@ -94,9 +94,14 @@ export async function updateStaff(id: string, data: any) {
 
 export async function deleteStaff(id: string) {
     try {
-        const storeId = await getEffectiveStoreId();
-        await prisma.staff.delete({
-            where: { id, storeId }
+        const ownerId = await getEffectiveOwnerId();
+        // Usamos deleteMany para evitar erro caso o registro já tenha sido excluido
+        // e para garantir que pertence a qualquer uma das lojas do dono atual.
+        await prisma.staff.deleteMany({
+            where: { 
+                id,
+                store: { ownerId }
+            }
         });
         return { success: true };
     } catch (err: any) {

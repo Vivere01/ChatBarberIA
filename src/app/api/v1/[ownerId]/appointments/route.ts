@@ -9,16 +9,33 @@ export async function GET(
     try {
         const owner = await authenticateApiRequest(req, params.ownerId);
 
+        const { searchParams } = new URL(req.url);
+        const dateParam = searchParams.get("date"); // Expects YYYY-MM-DD
+
+        const where: any = {
+            store: {
+                ownerId: owner.id
+            }
+        };
+
+        if (dateParam) {
+            const startDate = new Date(dateParam);
+            startDate.setUTCHours(0, 0, 0, 0);
+            const endDate = new Date(dateParam);
+            endDate.setUTCHours(23, 59, 59, 999);
+
+            where.scheduledAt = {
+                gte: startDate,
+                lte: endDate
+            };
+        }
+
         const appointments = await prisma.appointment.findMany({
-            where: {
-                store: {
-                    ownerId: owner.id
-                }
-            },
+            where,
             include: {
                 client: { select: { name: true, phone: true } },
-                staff: { select: { name: true } },
-                store: { select: { name: true } },
+                staff: { select: { id: true, name: true } },
+                store: { select: { id: true, name: true } },
                 items: {
                     include: {
                         service: true,
@@ -26,17 +43,20 @@ export async function GET(
                     }
                 }
             },
-            orderBy: { scheduledAt: 'desc' },
-            take: 100 // Limit for performance
+            orderBy: { scheduledAt: 'asc' },
+            take: 200 // Slightly larger limit for busy days
         });
 
         return apiResponse({
             count: appointments.length,
             appointments: appointments.map(a => ({
                 id: a.id,
+                storeId: a.storeId,
                 store: a.store.name,
+                clientId: a.clientId,
                 client: a.client.name,
                 clientPhone: a.client.phone,
+                staffId: a.staffId,
                 staff: a.staff.name,
                 status: a.status,
                 scheduledAt: a.scheduledAt,

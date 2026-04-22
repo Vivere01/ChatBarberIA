@@ -23,6 +23,7 @@ export async function GET(
                 slug: s.slug,
                 address: s.address,
                 phone: s.phone,
+                timezone: s.timezone,
                 isActive: s.isActive,
                 businessHours: s.businessHours.map(bh => ({
                     dayOfWeek: bh.dayOfWeek,

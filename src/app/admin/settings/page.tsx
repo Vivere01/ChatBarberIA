@@ -42,7 +42,8 @@ export default function SettingsPage() {
         colorSubscriber: "#166534",
         colorRegular: "#475569",
         colorDefaulter: "#991B1B",
-        businessHours: [] as any[]
+        businessHours: [] as any[],
+        timezone: "America/Sao_Paulo"
     });
 
     useEffect(() => {
@@ -79,7 +80,8 @@ export default function SettingsPage() {
                 colorSubscriber: (storeRes.store as any).colorSubscriber || "#166534",
                 colorRegular: (storeRes.store as any).colorRegular || "#475569",
                 colorDefaulter: (storeRes.store as any).colorDefaulter || "#991B1B",
-                businessHours: (storeRes.store as any).businessHours || []
+                businessHours: (storeRes.store as any).businessHours || [],
+                timezone: (storeRes.store as any).timezone || "America/Sao_Paulo"
             });
         }
         setFetching(false);
@@ -212,6 +214,37 @@ export default function SettingsPage() {
                                                 <Clock className="w-5 h-5 text-brand-400" /> Horários de Funcionamento
                                             </h2>
                                             <p className="text-zinc-500 text-xs uppercase tracking-widest font-black mt-1">Defina quando sua barbearia abre e fecha</p>
+                                        </div>
+
+                                        <div className="space-y-4 p-6 bg-brand-500/5 rounded-3xl border border-brand-500/10">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center">
+                                                    <Calendar className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-white">Fuso Horário do Agente IA</h3>
+                                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Essencial para o agendamento correto via WhatsApp</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <select
+                                                    value={storeData.timezone}
+                                                    onChange={(e) => setStoreData({ ...storeData, timezone: e.target.value })}
+                                                    className="w-full h-12 bg-dark-800 border border-white/5 rounded-xl px-4 text-xs font-bold text-zinc-300 outline-none focus:border-brand-500/30 transition-all appearance-none cursor-pointer"
+                                                >
+                                                    <option value="America/Sao_Paulo">Brasília (GMT-3) - São Paulo, RJ, Sul, MG, Nordeste</option>
+                                                    <option value="America/Manaus">Manaus (GMT-4) - AM, RR, AC</option>
+                                                    <option value="America/Campo_Grande">Campo Grande (GMT-4) - MS</option>
+                                                    <option value="America/Cuiaba">Cuiabá (GMT-4) - MT</option>
+                                                    <option value="America/Rio_Branco">Rio Branco (GMT-5) - Acre</option>
+                                                    <option value="America/Fortaleza">Fortaleza (GMT-3) - Ceará</option>
+                                                    <option value="America/Belem">Belém (GMT-3) - Pará</option>
+                                                </select>
+                                                <p className="text-[9px] text-zinc-600 font-bold uppercase italic ml-1">
+                                                    Atualmente selecionado: <span className="text-brand-400">{storeData.timezone}</span>
+                                                </p>
+                                            </div>
                                         </div>
 
                                         <form onSubmit={handleSaveStore} className="space-y-4">

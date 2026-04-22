@@ -148,6 +148,7 @@ export async function updateStoreSettings(data: {
     colorRegular?: string;
     colorDefaulter?: string;
     businessHours?: any[];
+    timezone?: string;
 }) {
     try {
         const { getAuthSession } = await import("@/lib/auth");
@@ -167,6 +168,7 @@ export async function updateStoreSettings(data: {
                 colorSubscriber: data.colorSubscriber,
                 colorRegular: data.colorRegular,
                 colorDefaulter: data.colorDefaulter,
+                timezone: data.timezone,
             }
         });
 

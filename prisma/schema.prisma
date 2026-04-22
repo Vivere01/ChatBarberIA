@@ -51,6 +51,7 @@ model Store {
   logoUrl            String?
   primaryColor       String            @default("#f97316")
   description        String?
+  timezone           String            @default("America/Sao_Paulo")
   isActive           Boolean           @default(true)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt

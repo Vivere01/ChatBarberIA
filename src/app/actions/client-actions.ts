@@ -118,16 +118,23 @@ export async function registerClient(data: {
 export async function updateClient(id: string, data: any) {
     try {
         const ownerId = await getEffectiveOwnerId();
+        
+        const updateData: any = {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            cpf: data.cpf,
+            birthDate: data.birthDate ? new Date(data.birthDate) : null,
+            clientType: resolveClientType(data.clientType),
+        };
+
+        if (data.password) {
+            updateData.passwordHash = await bcrypt.hash(data.password, 10);
+        }
+
         const client = await prisma.client.update({
             where: { id, ownerId },
-            data: {
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                cpf: data.cpf,
-                birthDate: data.birthDate ? new Date(data.birthDate) : null,
-                clientType: resolveClientType(data.clientType),
-            }
+            data: updateData
         });
         return { success: true, client };
     } catch (err: any) {

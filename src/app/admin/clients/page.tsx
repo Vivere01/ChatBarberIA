@@ -297,18 +297,18 @@ export default function ClientsPage() {
                                 className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 transition-all font-medium"
                             />
                         </div>
-                        {!editingClient && (
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-400 mb-2">Senha Provisória</label>
-                                <input
-                                    type="text"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder="Senha para o cliente logar"
-                                    className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 transition-all font-medium"
-                                />
-                            </div>
-                        )}
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                {editingClient ? "Nova Senha (deixe em branco para manter)" : "Senha de Acesso"}
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                placeholder={editingClient ? "Digite a nova senha..." : "Senha para o cliente logar"}
+                                className="w-full bg-dark-700 border border-white/8 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 transition-all font-medium"
+                            />
+                        </div>
                     </div>
 
                     <div>

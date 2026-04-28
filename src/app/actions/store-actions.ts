@@ -72,8 +72,17 @@ export async function updateStore(id: string, data: {
         if (loginBackgroundUrl !== undefined) updateData.loginBackgroundUrl = loginBackgroundUrl;
         if (brandingFaviconUrl !== undefined) updateData.brandingFaviconUrl = brandingFaviconUrl;
 
+        // Verify ownership first
+        const existingStore = await prisma.store.findUnique({
+            where: { id }
+        });
+
+        if (!existingStore || existingStore.ownerId !== ownerId) {
+            return { success: false, error: "Unidade não encontrada ou sem permissão." };
+        }
+
         const store = await prisma.store.update({
-            where: { id, ownerId },
+            where: { id },
             data: updateData,
         });
         revalidatePath("/admin/stores");
@@ -87,8 +96,17 @@ export async function updateStore(id: string, data: {
 export async function deleteStore(id: string) {
     try {
         const ownerId = await getEffectiveOwnerId();
+        // Verify ownership first
+        const existingStore = await prisma.store.findUnique({
+            where: { id }
+        });
+
+        if (!existingStore || existingStore.ownerId !== ownerId) {
+            return { success: false, error: "Unidade não encontrada ou sem permissão." };
+        }
+
         await prisma.store.delete({
-            where: { id, ownerId },
+            where: { id },
         });
         revalidatePath("/admin/stores");
         return { success: true };
